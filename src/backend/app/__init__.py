@@ -1,0 +1,1 @@
+"""BarberBook backend application."""

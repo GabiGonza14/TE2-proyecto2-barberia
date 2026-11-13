@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: barberbook
+      POSTGRES_USER: barberbook
+      POSTGRES_PASSWORD: barberbook
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U barberbook -d barberbook"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: .
+      dockerfile: src/backend/Dockerfile
+    environment:
+      DB_URL: ${DB_URL:-postgresql+psycopg://barberbook:barberbook@db:5432/barberbook}
+      ADMIN_KEY: ${ADMIN_KEY:-change-me}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  web:
+    build:
+      context: src/frontend
+    depends_on:
+      api:
+        condition: service_started
+    ports:
+      - "5173:5173"
+
+volumes:
+  postgres_data:
