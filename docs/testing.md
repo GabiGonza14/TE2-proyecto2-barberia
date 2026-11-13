@@ -10,6 +10,11 @@
 
 Ejecutar: `docker compose up -d db && pytest -v`
 
+## Evidencia de infraestructura
+| Tarea | Criterio | Verificación | Estado |
+|-------|----------|--------------|--------|
+| T1 · Issue #1 | `docker compose up` levanta `db`, `api` y `web`; `GET /health` responde 200; CI ejecuta `test_health` | `docker compose up --build -d` · `curl http://localhost:8000/health` · `docker compose exec -T api pytest -v` | ✅ PASS local · CI pendiente del PR |
+
 ## Matriz de evidencia (Verify & Converge)
 | AC | Requisito | Test | Estado |
 |----|-----------|------|--------|
