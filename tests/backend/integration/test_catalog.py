@@ -2,26 +2,30 @@ import asyncio
 from numbers import Real
 
 import httpx
+from fastapi import FastAPI
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
 
 from app.core.errors import VALIDATION_ERROR, DomainError
-from app.main import app
+from app.main import app, domain_error_handler
+
+error_app = FastAPI()
+error_app.add_exception_handler(DomainError, domain_error_handler)
 
 
-async def get(path: str) -> httpx.Response:
-    transport = httpx.ASGITransport(app=app)
-    async with httpx.AsyncClient(
-        transport=transport, base_url="http://testserver"
-    ) as client:
-        return await client.get(path)
-
-
-@app.get("/__test__/domain-error", include_in_schema=False)
+@error_app.get("/__test__/domain-error", include_in_schema=False)
 def raise_domain_error() -> None:
     raise DomainError(
         VALIDATION_ERROR, "El nombre no es válido", field="client_name"
     )
+
+
+async def get(path: str, target_app: FastAPI = app) -> httpx.Response:
+    transport = httpx.ASGITransport(app=target_app)
+    async with httpx.AsyncClient(
+        transport=transport, base_url="http://testserver"
+    ) as client:
+        return await client.get(path)
 
 
 def test_list_barbers_only_active(engine: Engine) -> None:
@@ -90,7 +94,7 @@ def test_list_services(engine: Engine) -> None:
 
 
 def test_domain_error_format(engine: Engine) -> None:
-    response = asyncio.run(get("/__test__/domain-error"))
+    response = asyncio.run(get("/__test__/domain-error", target_app=error_app))
 
     assert response.status_code == 422
     assert response.json() == {
