@@ -1,5 +1,6 @@
 from datetime import date as Date
 from datetime import datetime
+from typing import Annotated
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -17,7 +18,7 @@ def availability(
     barber_id: int,
     service_id: int,
     date: Date,
-    db: Session = Depends(get_db),
-    now: datetime = Depends(get_now),
+    db: Annotated[Session, Depends(get_db)],
+    now: Annotated[datetime, Depends(get_now)],
 ):
     return get_availability(db, barber_id, service_id, date, now)

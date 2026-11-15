@@ -37,13 +37,9 @@ def _empty_result(
     }
 
 
-def get_availability(
-    db: Session,
-    barber_id: int,
-    service_id: int,
-    day: date,
-    now: datetime,
-) -> dict[str, Any]:
+def _service_duration_for_active_barber(
+    db: Session, barber_id: int, service_id: int
+) -> int:
     service = get_service(db, service_id)
     if service is None:
         raise DomainError(NOT_FOUND, "Servicio no encontrado")
@@ -53,6 +49,19 @@ def get_availability(
         raise DomainError(NOT_FOUND, "Barbero no encontrado")
     if not barber.active:
         raise DomainError(BARBER_INACTIVE, "El barbero está inactivo")
+    return service.duration_min
+
+
+def get_availability(
+    db: Session,
+    barber_id: int,
+    service_id: int,
+    day: date,
+    now: datetime,
+) -> dict[str, Any]:
+    duration_min = _service_duration_for_active_barber(
+        db, barber_id, service_id
+    )
 
     if now.tzinfo is None or now.utcoffset() is None:
         raise ValueError("Se requiere datetime con zona horaria")
@@ -68,7 +77,7 @@ def get_availability(
     slots: list[str] = []
     start = datetime.combine(day, OPENING_TIME, TZ)
     while True:
-        end = compute_end(start, service.duration_min)
+        end = compute_end(start, duration_min)
         if not is_within_business_hours(start, end):
             break
         if day == today and check_booking_window(start, now) is not None:
