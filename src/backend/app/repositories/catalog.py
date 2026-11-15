@@ -5,6 +5,14 @@ from app.models.barber import Barber
 from app.models.service import Service
 
 
+def get_barber(db: Session, barber_id: int) -> Barber | None:
+    return db.get(Barber, barber_id)
+
+
+def get_service(db: Session, service_id: int) -> Service | None:
+    return db.get(Service, service_id)
+
+
 def list_active_barbers(db: Session) -> list[Barber]:
     return list(
         db.scalars(
