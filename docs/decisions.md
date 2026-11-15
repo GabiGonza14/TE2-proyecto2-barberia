@@ -7,6 +7,7 @@
 | D3 | No doble reserva garantizada en BD | Solo validación en código | Una validación en código no resiste 2 peticiones simultáneas (RF-07). |
 | D4 | Sin login de cliente (código + teléfono) | Cuentas de usuario | Reduce fricción (O2) y alcance del MVP. |
 | D5 | Intervalos `[inicio, fin)` | Cerrados | Permite citas pegadas sin choque. |
+| D6 | Seed dentro de la migración inicial | Script de seed separado | El catálogo base forma parte del esquema inicial del MVP; garantiza datos deterministas en tests y evita un paso extra en Docker/CI. |
 
 ## Cambios de requerimiento
 *(CR-01 se documentará aquí: solicitud → specs afectadas → AC → tareas → commits/PR → tests → resultado.)*

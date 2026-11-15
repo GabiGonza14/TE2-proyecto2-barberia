@@ -14,6 +14,7 @@ Ejecutar: `docker compose up -d db && pytest -v`
 | Tarea | Criterio | Verificación | Estado |
 |-------|----------|--------------|--------|
 | T1 · Issue #1 | `docker compose up` levanta `db`, `api` y `web`; `GET /health` responde 200; CI ejecuta `test_health` | `docker compose up --build -d` · `curl http://localhost:8000/health` · `docker compose exec -T api pytest -v` | ✅ PASS local · ✅ PASS CI (GitHub Actions) |
+| T2 · Issue #2 | `alembic upgrade head` aplica; la BD rechaza 2 reservas `CONFIRMADA` solapadas; permite solapadas si una está `CANCELADA`; permite citas pegadas `[10:00,10:30)` y `[10:30,11:00)`; seed correcto | `docker compose exec -T api pytest -v` (`test_migration_applies`, `test_db_rejects_overlapping_bookings`, `test_db_allows_overlap_if_cancelled`, `test_db_allows_adjacent_bookings`, `test_seed_data`) · `alembic check` | ✅ PASS local (6 passed) · ✅ PASS CI (GitHub Actions) |
 
 ## Matriz de evidencia (Verify & Converge)
 | AC | Requisito | Test | Estado |
