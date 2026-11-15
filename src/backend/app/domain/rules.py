@@ -21,6 +21,7 @@ SLOT_MINUTES = 15
 MAX_DAYS_AHEAD = 14
 
 # BR-09 · datos del cliente
+# Se usa [0-9] y no \d a propósito: en Python \d acepta dígitos Unicode (p. ej. "٦١٢٣").
 _PHONE_RE = re.compile(r"^6[0-9]{3}-?[0-9]{4}$")
 NAME_MIN, NAME_MAX = 2, 60
 
@@ -33,11 +34,14 @@ def _local(dt: datetime) -> datetime:
 
 def overlaps(a_start: datetime, a_end: datetime, b_start: datetime, b_end: datetime) -> bool:
     """BR-01 · intervalos semiabiertos [inicio, fin): las citas pegadas no chocan."""
+    for dt in (a_start, a_end, b_start, b_end):
+        _local(dt)
     return a_start < b_end and a_end > b_start
 
 
 def compute_end(start: datetime, duration_min: int) -> datetime:
     """BR-03 · fin = inicio + duración del servicio."""
+    _local(start)
     if duration_min <= 0:
         raise ValueError("La duración debe ser positiva")
     return start + timedelta(minutes=duration_min)
@@ -49,8 +53,13 @@ def is_open_day(day: date) -> bool:
 
 
 def is_within_business_hours(start: datetime, end: datetime) -> bool:
-    """BR-02 · la cita empieza y termina dentro del horario de un día abierto."""
+    """BR-02 · la cita empieza y termina dentro del horario de un día abierto.
+
+    Precondición verificada: end > start.
+    """
     start_l, end_l = _local(start), _local(end)
+    if end_l <= start_l:
+        return False
     if not is_open_day(start_l.date()):
         return False
     opening = datetime.combine(start_l.date(), OPENING_TIME, TZ)
