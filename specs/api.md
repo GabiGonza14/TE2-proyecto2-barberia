@@ -15,6 +15,28 @@ Formato de error común:
 | POST | `/bookings/{code}/cancel` | Cancelar | RF-11, RF-12 |
 | GET | `/admin/agenda?date=&barber_id=` | Agenda (header `X-Admin-Key`) | RF-13, RF-14 |
 
+## GET /barbers
+**200** — solo barberos activos (BR-08), ordenados por `id`.
+```json
+[
+  { "id": 1, "name": "Carlos" },
+  { "id": 2, "name": "Luis" },
+  { "id": 3, "name": "Andrés" }
+]
+```
+
+## GET /services
+**200** — todos los servicios, ordenados por `id`.
+```json
+[
+  { "id": 1, "name": "Corte", "duration_min": 30, "price": 8.00 },
+  { "id": 2, "name": "Barba", "duration_min": 20, "price": 5.00 },
+  { "id": 3, "name": "Corte+Barba", "duration_min": 45, "price": 12.00 },
+  { "id": 4, "name": "Diseño/Fade", "duration_min": 40, "price": 10.00 }
+]
+```
+`price` es un número decimal en USD (no string).
+
 ## GET /availability
 **200**
 ```json
