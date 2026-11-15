@@ -39,9 +39,26 @@ def test_timezone_is_panama() -> None:
     assert TZ == PANAMA
 
 
-def test_naive_datetime_is_rejected() -> None:
+NAIVE = datetime(2026, 12, 1, 10, 0)
+
+
+@pytest.mark.parametrize(
+    "call",
+    [
+        lambda: is_on_grid(NAIVE),
+        lambda: is_within_business_hours(NAIVE, NAIVE + timedelta(minutes=30)),
+        lambda: check_booking_window(NAIVE, at(1, 9)),
+        lambda: overlaps(NAIVE, NAIVE + timedelta(minutes=30), at(1, 10), at(1, 10, 30)),
+        lambda: overlaps(at(1, 10), at(1, 10, 30), NAIVE, NAIVE + timedelta(minutes=30)),
+        lambda: compute_end(NAIVE, 30),
+    ],
+    ids=["is_on_grid", "is_within_business_hours", "check_booking_window",
+         "overlaps_a", "overlaps_b", "compute_end"],
+)
+def test_naive_datetime_is_rejected(call) -> None:
+    """BR-11: toda función que recibe datetimes exige zona horaria."""
     with pytest.raises(ValueError):
-        is_on_grid(datetime(2026, 12, 1, 10, 0))
+        call()
 
 
 # ---------------------------------------------------------------- BR-01
@@ -116,6 +133,11 @@ def test_outside_business_hours(start: datetime, minutes: int) -> None:
     assert is_within_business_hours(start, compute_end(start, minutes)) is False
 
 
+def test_business_hours_rejects_end_before_start() -> None:
+    assert is_within_business_hours(at(1, 11), at(1, 10)) is False
+    assert is_within_business_hours(at(1, 10), at(1, 10)) is False
+
+
 def test_business_hours_evaluated_in_panama_time() -> None:
     # 14:00 UTC == 09:00 Panamá (dentro); 13:45 UTC == 08:45 Panamá (fuera)
     ok = datetime(2026, 12, 1, 14, 0, tzinfo=timezone.utc)
@@ -159,7 +181,20 @@ def test_normalize_phone_valid(raw: str) -> None:
     assert normalize_phone(raw) == "61234567"
 
 
-@pytest.mark.parametrize("raw", ["1234", "5123-4567", "6123-456", "612345678", "6abc-defg", ""])
+@pytest.mark.parametrize(
+    "raw",
+    [
+        "1234",
+        "5123-4567",
+        "6123-456",
+        "612345678",
+        "6abc-defg",
+        "",
+        # Regresión: dígitos Unicode (árabe-índicos). Por eso la regex usa [0-9] y no \d,
+        # aunque SonarCloud sugiera \d: en Python \d acepta cualquier dígito Unicode.
+        "6\u0661\u0662\u0663\u0664\u0665\u0666\u0667",
+    ],
+)
 def test_normalize_phone_invalid(raw: str) -> None:
     with pytest.raises(DomainError) as exc:
         normalize_phone(raw)
