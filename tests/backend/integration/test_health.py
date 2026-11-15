@@ -17,3 +17,4 @@ def test_health() -> None:
     response = asyncio.run(request_health())
 
     assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
