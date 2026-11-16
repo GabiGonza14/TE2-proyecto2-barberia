@@ -67,7 +67,7 @@ async def request_validation_error_handler(
         content={
             "error": {
                 "code": VALIDATION_ERROR,
-                "message": first_error.get("msg", "Solicitud inválida"),
+                "message": "Solicitud inválida",
                 "details": {"field": field},
             }
         },

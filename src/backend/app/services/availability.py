@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.core.errors import (
     BARBER_INACTIVE,
+    CLOSED,
     NOT_FOUND,
     PAST_DATE,
     TOO_FAR_AHEAD,
@@ -71,7 +72,7 @@ def get_availability(
     if (day - today).days > MAX_DAYS_AHEAD:
         return _empty_result(day, barber_id, service_id, TOO_FAR_AHEAD)
     if not is_open_day(day):
-        return _empty_result(day, barber_id, service_id, "CLOSED")
+        return _empty_result(day, barber_id, service_id, CLOSED)
 
     bookings = confirmed_bookings_for_day(db, barber_id, day)
     slots: list[str] = []

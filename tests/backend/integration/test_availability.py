@@ -221,6 +221,52 @@ def test_availability_unknown_service(engine: Engine) -> None:
     assert response.json()["error"]["code"] == "NOT_FOUND"
 
 
+def test_availability_unknown_barber(engine: Engine) -> None:
+    _, corte_id, _ = catalog_ids(engine)
+
+    response = asyncio.run(
+        get(availability_url(999_999, corte_id, "2026-12-01"))
+    )
+
+    assert response.status_code == 404
+    assert response.json()["error"]["code"] == "NOT_FOUND"
+
+
+def test_other_barber_booking_does_not_block(engine: Engine) -> None:
+    carlos_id, corte_id, _ = catalog_ids(engine)
+    with engine.connect() as conn:
+        luis_id = conn.execute(
+            text("SELECT id FROM barbers WHERE name = 'Luis'")
+        ).scalar_one()
+    insert_booking(
+        engine,
+        code="T5A003",
+        barber_id=luis_id,
+        service_id=corte_id,
+        start_at=datetime(2026, 12, 1, 10, 0, tzinfo=TZ),
+        end_at=datetime(2026, 12, 1, 10, 30, tzinfo=TZ),
+    )
+
+    response = asyncio.run(
+        get(availability_url(carlos_id, corte_id, "2026-12-01"))
+    )
+
+    assert response.status_code == 200
+    assert "10:00" in response.json()["slots"]
+
+
+def test_availability_day_fourteen_is_allowed(engine: Engine) -> None:
+    carlos_id, corte_id, _ = catalog_ids(engine)
+
+    response = asyncio.run(
+        get(availability_url(carlos_id, corte_id, "2026-12-15"))
+    )
+
+    assert response.status_code == 200
+    assert response.json()["reason"] is None
+    assert response.json()["slots"]
+
+
 def test_availability_missing_param_common_format(engine: Engine) -> None:
     carlos_id, corte_id, _ = catalog_ids(engine)
 
@@ -233,4 +279,5 @@ def test_availability_missing_param_common_format(engine: Engine) -> None:
 
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+    assert response.json()["error"]["message"] == "Solicitud inválida"
     assert response.json()["error"]["details"] == {"field": "date"}
