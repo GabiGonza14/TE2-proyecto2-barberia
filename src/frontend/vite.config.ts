@@ -13,7 +13,7 @@ function resolveTestsFromFrontend(): Plugin {
   return {
     name: "resolve-tests-from-frontend",
     enforce: "pre",
-    async resolveId(source, importer, options) {
+    resolveId(source, importer, options) {
       const isBare = !source.startsWith(".") && !source.startsWith("/") && !source.startsWith("\0");
       if (!importer?.includes("/tests/frontend/") || !isBare) return null;
       return this.resolve(source, frontendEntry, { ...options, skipSelf: true });
