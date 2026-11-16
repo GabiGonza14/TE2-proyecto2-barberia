@@ -117,9 +117,10 @@ def test_db_allows_overlap_if_cancelled(
     assert total == 2
 
 
-def test_db_allows_adjacent_bookings(
+def test_db_rejects_adjacent_bookings(
     engine: Engine, clean_bookings: None
 ) -> None:
+    """BR-12 en la BD: 10:00–10:30 bloquea hasta 10:40; 10:30 ya no entra."""
     barber_id, service_id = seed_ids(engine)
     insert_booking(
         engine,
@@ -129,13 +130,67 @@ def test_db_allows_adjacent_bookings(
         start_at=BASE_START,
         end_at=BASE_START + timedelta(minutes=30),
     )
+
+    with pytest.raises(IntegrityError) as excinfo:
+        insert_booking(
+            engine,
+            code="FFF666",
+            barber_id=barber_id,
+            service_id=service_id,
+            start_at=BASE_START + timedelta(minutes=30),
+            end_at=BASE_START + timedelta(minutes=60),
+        )
+
+    assert isinstance(excinfo.value.orig, ExclusionViolation)
+
+    with engine.connect() as conn:
+        total = conn.execute(text("SELECT COUNT(*) FROM bookings")).scalar_one()
+    assert total == 1
+
+
+def test_db_enforces_buffer(
+    engine: Engine, clean_bookings: None
+) -> None:
+    """AC-24 · RNF-01: la BD rechaza una cita que choca con la limpieza de
+    otra CONFIRMADA; si la primera está CANCELADA, se acepta."""
+    barber_id, service_id = seed_ids(engine)
     insert_booking(
         engine,
-        code="FFF666",
+        code="HHH777",
+        barber_id=barber_id,
+        service_id=service_id,
+        start_at=BASE_START,
+        end_at=BASE_START + timedelta(minutes=30),
+    )
+
+    with pytest.raises(IntegrityError) as excinfo:
+        insert_booking(
+            engine,
+            code="III888",
+            barber_id=barber_id,
+            service_id=service_id,
+            start_at=BASE_START + timedelta(minutes=30),
+            end_at=BASE_START + timedelta(minutes=60),
+            blocked_until=BASE_START + timedelta(minutes=70),
+        )
+
+    assert isinstance(excinfo.value.orig, ExclusionViolation)
+
+    # La cancelada no bloquea la limpieza (BR-07): el mismo hueco se acepta.
+    with engine.begin() as conn:
+        conn.execute(
+            text("UPDATE bookings SET status = 'CANCELADA' WHERE code = :code"),
+            {"code": "HHH777"},
+        )
+
+    insert_booking(
+        engine,
+        code="III888",
         barber_id=barber_id,
         service_id=service_id,
         start_at=BASE_START + timedelta(minutes=30),
         end_at=BASE_START + timedelta(minutes=60),
+        blocked_until=BASE_START + timedelta(minutes=70),
     )
 
     with engine.connect() as conn:
