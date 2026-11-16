@@ -19,7 +19,7 @@
 |------|-----------|---------|
 | API | FastAPI | Validación con Pydantic, OpenAPI automático, experiencia previa del equipo. |
 | ORM / migraciones | SQLAlchemy 2 + Alembic | Transacciones explícitas, migraciones versionadas. |
-| BD | PostgreSQL 16 | `EXCLUDE USING gist` con `tstzrange` → imposible guardar 2 citas solapadas. |
+| BD | PostgreSQL 16 | `EXCLUDE USING gist` con `tstzrange` → imposible guardar 2 citas solapadas ni saltarse la limpieza de BR-12. |
 | UI | React + Vite + TS | Rápido de montar, tipado. |
 | Tests | pytest, httpx, vitest | Unit + integración + concurrencia. |
 | Infra | Docker Compose | `db` + `api` + `web` con un comando. |
@@ -38,8 +38,8 @@
 | Módulo | Responsabilidad |
 |--------|-----------------|
 | `routers/` | Endpoints HTTP, traducción de errores de dominio a HTTP. |
-| `services/availability.py` | Cálculo de slots libres (BR-02, BR-03, BR-04, BR-05). |
-| `services/booking.py` | Crear / cancelar / consultar reservas (BR-01, BR-06, BR-07, BR-10). |
+| `services/availability.py` | Cálculo de slots libres (BR-02, BR-03, BR-04, BR-05, BR-12). |
+| `services/booking.py` | Crear / cancelar / consultar reservas (BR-01, BR-06, BR-07, BR-10, BR-12). |
 | `domain/rules.py` | Funciones puras: `overlaps()`, `is_within_hours()`, `on_grid()`… (fáciles de testear). |
 | `repositories/` | Acceso a datos. |
 | `core/errors.py` | Excepciones de dominio → códigos de `business-rules.md`. |
@@ -47,13 +47,13 @@
 ## 4. Concurrencia (O1 / RF-07)
 
 Dos capas de defensa:
-1. **Aplicación:** dentro de una transacción, se verifica solapamiento antes de insertar → error amigable `SLOT_TAKEN`.
+1. **Aplicación:** dentro de una transacción, se verifica solapamiento antes de insertar, comparando `[start_at, blocked_until)` para incluir los 10 min de limpieza de BR-12 → error amigable `SLOT_TAKEN`.
 2. **Base de datos (garantía final):**
    ```sql
-   EXCLUDE USING gist (barber_id WITH =, tstzrange(start_at, end_at, '[)') WITH &&)
+   EXCLUDE USING gist (barber_id WITH =, tstzrange(start_at, blocked_until, '[)') WITH &&)
    WHERE (status = 'CONFIRMADA')
    ```
-   Si dos peticiones pasan el paso 1 a la vez, la segunda falla al hacer `INSERT` → se captura `ExclusionViolation` y se responde **409 `SLOT_TAKEN`**.
+   `blocked_until = end_at + interval '10 minutes'` (`CHECK`, ver `data-model.md`). Si dos peticiones pasan el paso 1 a la vez, la segunda falla al hacer `INSERT` → se captura `ExclusionViolation` y se responde **409 `SLOT_TAKEN`**.
 
 ## 5. Seguridad
 - Admin: header `X-Admin-Key` comparado contra variable de entorno.

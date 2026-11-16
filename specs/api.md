@@ -45,6 +45,8 @@ Formato de error común:
 ```
 Día cerrado / fuera de ventana → `"slots": [], "reason": "CLOSED" | "PAST_DATE" | "TOO_FAR_AHEAD"`.
 
+**CR-01 (BR-12):** un slot solo aparece si, además de no solaparse, deja **10 min de limpieza** antes y después de las otras reservas `CONFIRMADA` del barbero. El formato de la respuesta **no cambia**.
+
 ## POST /bookings
 **Request**
 ```json
@@ -56,6 +58,8 @@ Día cerrado / fuera de ventana → `"slots": [], "reason": "CLOSED" | "PAST_DAT
 { "code": "K7P2QX", "status": "CONFIRMADA", "barber": "Carlos", "service": "Corte",
   "start_at": "2026-12-01T10:00:00-05:00", "end_at": "2026-12-01T10:30:00-05:00" }
 ```
+**CR-01:** si el horario choca solo con la limpieza de otra cita (BR-12), también responde 409 `SLOT_TAKEN`. El cuerpo del 201 **no cambia** (`end_at` es el fin real del servicio, sin limpieza).
+
 **Errores:** 409 `SLOT_TAKEN` · 422 `OUTSIDE_BUSINESS_HOURS` · `INVALID_START_TIME` · `PAST_DATE` · `TOO_FAR_AHEAD` · `VALIDATION_ERROR` · `BARBER_INACTIVE`
 
 ## GET /bookings/{code}?phone=61234567

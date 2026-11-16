@@ -27,14 +27,14 @@ Ejecutar: `docker compose up -d db && pytest -v`
 | AC-01 | RF-05 | test_create_booking_success | ✅ PASS |
 | AC-02 ⭐ | RF-06 / BR-01 | test_double_booking_rejected | ✅ PASS |
 | AC-03 ⭐ | RF-06 / BR-01 | test_partial_overlap_rejected | ✅ PASS |
-| AC-04 | BR-01 | test_adjacent_bookings_allowed | ✅ PASS |
+| AC-04 ✏️ | BR-01 / BR-12 | test_buffer_after_booking | ⏳ CR-01 (T13) |
 | AC-05 | BR-01 | test_same_time_different_barber_allowed | ✅ PASS |
 | AC-06 ⭐ | RF-07 / RNF-01 | test_concurrent_double_booking | ✅ PASS |
 | AC-07 | BR-02 | test_outside_business_hours | ✅ PASS |
 | AC-08 | BR-04 | test_start_not_on_grid | ✅ PASS |
 | AC-09 | BR-05 | test_booking_window | ✅ PASS |
 | AC-10 | BR-09 | test_client_validation | ✅ PASS |
-| AC-11 | RF-03 | test_availability_excludes_taken | ✅ PASS |
+| AC-11 ✏️ | RF-03 / RF-15 | test_availability_excludes_taken | ⏳ CR-01 (T13) |
 | AC-12 | RF-04 | test_availability_closed_day | ✅ PASS |
 | AC-13 | RF-11 / BR-07 | test_cancel_frees_slot | ✅ PASS |
 | AC-14 | RF-12 / BR-06 | test_cancel_window_closed | ✅ PASS |
@@ -46,3 +46,8 @@ Ejecutar: `docker compose up -d db && pytest -v`
 | AC-20 | BR-10 | test_lookup_code_case_insensitive | ✅ PASS |
 | AC-21 | RF-13 | test_agenda_lists_barbers_without_bookings | ✅ PASS |
 | AC-22 | RF-13 | test_agenda_defaults_to_today | ✅ PASS |
+| AC-23 🆕 | RF-15 / BR-12 | test_buffer_before_existing_booking | ⏳ CR-01 (T13) |
+| AC-24 🆕 | RNF-01 / BR-12 | test_db_enforces_buffer | ⏳ CR-01 (T13) |
+| AC-25 🆕 | BR-02 / BR-12 | test_buffer_may_end_after_closing | ⏳ CR-01 (T13) |
+
+✏️ = AC modificado por CR-01 · 🆕 = AC nuevo de CR-01 · ⏳ = pendiente de implementar.
