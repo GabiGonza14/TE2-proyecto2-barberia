@@ -17,6 +17,8 @@ from app.core.errors import (
 )
 from app.domain.rules import (
     TZ,
+    can_cancel,
+    normalize_booking_code,
     check_booking_window,
     compute_end,
     is_on_grid,
@@ -213,3 +215,30 @@ def test_validate_name_invalid(raw: str) -> None:
         validate_name(raw)
     assert exc.value.code == VALIDATION_ERROR
     assert exc.value.field == "client_name"
+
+
+# ---------------------------------------------------------------- BR-06 (T8)
+@pytest.mark.parametrize(
+    "notice, allowed",
+    [
+        (timedelta(hours=3), True),
+        (timedelta(hours=2), True),  # borde: exactamente 2 h está permitido (D8)
+        (timedelta(hours=1, minutes=59), False),
+        (timedelta(minutes=0), False),
+        (timedelta(hours=-1), False),  # la cita ya pasó
+    ],
+)
+def test_can_cancel(notice: timedelta, allowed: bool) -> None:
+    start = at(1, 10)
+    assert can_cancel(start, start - notice) is allowed
+
+
+def test_can_cancel_rejects_naive_datetimes() -> None:
+    with pytest.raises(ValueError):
+        can_cancel(datetime(2026, 12, 1, 10, 0), at(1, 7))
+
+
+# ---------------------------------------------------------------- BR-10 (T8)
+@pytest.mark.parametrize("raw", ["k7p2qx", "K7P2QX", " k7P2qX "])
+def test_normalize_booking_code(raw: str) -> None:
+    assert normalize_booking_code(raw) == "K7P2QX"
