@@ -35,6 +35,9 @@ ERROR_STATUS = {
     UNAUTHORIZED: 401,
 }
 
+# RFC 9110: el 401 debe indicar el esquema de autenticación (RF-14).
+ERROR_HEADERS = {UNAUTHORIZED: {"WWW-Authenticate": 'X-Admin-Key realm="admin"'}}
+
 app = FastAPI(title="BarberBook API")
 app.include_router(catalog_router)
 app.include_router(availability_router)
@@ -56,6 +59,7 @@ async def domain_error_handler(
                 "details": details,
             }
         },
+        headers=ERROR_HEADERS.get(exc.code),
     )
 
 

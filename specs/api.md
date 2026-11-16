@@ -71,9 +71,11 @@ El código no distingue mayúsculas y minúsculas: se normaliza a mayúsculas an
 ## GET /admin/agenda?date=&barber_id=
 `date` es opcional; si no se envía, se usa la fecha de hoy en America/Panama. `barber_id` también es opcional; si no existe, responde **404** `NOT_FOUND`.
 
-Header `X-Admin-Key: <clave>` · **401** `UNAUTHORIZED` si falta, es incorrecto o la variable `ADMIN_KEY` no está configurada.
+Header `X-Admin-Key: <clave>` · **401** `UNAUTHORIZED` si falta, es incorrecto o la variable `ADMIN_KEY` no está configurada. El 401 incluye `WWW-Authenticate: X-Admin-Key realm="admin"`.
 
 La respuesta incluye todos los barberos activos, aunque no tengan citas (`bookings: []`). Un barbero inactivo aparece solo si tiene reservas `CONFIRMADA` en la fecha consultada. Las reservas canceladas no aparecen y la respuesta no incluye el teléfono del cliente.
+
+Si `barber_id` corresponde a un barbero **inactivo sin reservas confirmadas** en la fecha consultada, responde **200** con `"barbers": []` (no es un 404: el barbero existe).
 
 ```json
 {

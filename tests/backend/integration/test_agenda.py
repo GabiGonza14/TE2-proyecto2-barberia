@@ -143,6 +143,7 @@ def test_agenda_requires_admin() -> None:
 
     assert response.status_code == 401
     assert response.json()["error"]["code"] == "UNAUTHORIZED"
+    assert response.headers["www-authenticate"].startswith("X-Admin-Key")
 
 
 def test_agenda_wrong_key() -> None:
@@ -219,6 +220,20 @@ def test_agenda_filter_by_barber(engine: Engine) -> None:
 
     assert [b["barber"] for b in body["barbers"]] == ["Luis"]
     assert [b["code"] for b in body["barbers"][0]["bookings"]] == ["LUI100"]
+
+
+def test_agenda_filter_inactive_barber_without_bookings(engine: Engine) -> None:
+    """D8: el barbero existe pero está inactivo y sin citas → 200 con lista vacía."""
+    set_active(engine, "Andrés", False)
+    try:
+        andres = _ids(engine)["barber_Andrés"]
+
+        response = agenda({"date": DAY, "barber_id": andres})
+
+        assert response.status_code == 200
+        assert response.json() == {"date": DAY, "barbers": []}
+    finally:
+        set_active(engine, "Andrés", True)
 
 
 def test_agenda_unknown_barber() -> None:
