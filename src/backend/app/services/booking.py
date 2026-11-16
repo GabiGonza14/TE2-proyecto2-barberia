@@ -28,6 +28,7 @@ from app.repositories.catalog import get_barber, get_service
 from app.schemas.bookings import BookingCreate, BookingOut
 
 MAX_CODE_ATTEMPTS = 5
+SLOT_TAKEN_MESSAGE = "El barbero ya tiene una cita en ese horario"
 
 # Dos INSERT simultáneos que chocan en no_double_booking pueden terminar en
 # deadlock (cada uno espera al otro) en lugar de ExclusionViolation.
@@ -108,7 +109,7 @@ def _validate_booking(
         db, data.barber_id, start, end
     ):
         raise DomainError(
-            SLOT_TAKEN, "El barbero ya tiene una cita en ese horario"
+            SLOT_TAKEN, SLOT_TAKEN_MESSAGE
         )
 
     return _ValidatedBooking(
@@ -143,7 +144,7 @@ def _persist_booking(
             if isinstance(exc.orig, ExclusionViolation):
                 raise DomainError(
                     SLOT_TAKEN,
-                    "El barbero ya tiene una cita en ese horario",
+                    SLOT_TAKEN_MESSAGE,
                 ) from exc
             if _is_code_collision(exc) and attempt < MAX_CODE_ATTEMPTS - 1:
                 continue
@@ -175,7 +176,7 @@ def create_booking(
             if attempt == MAX_RACE_ATTEMPTS - 1:
                 raise DomainError(
                     SLOT_TAKEN,
-                    "El barbero ya tiene una cita en ese horario",
+                    SLOT_TAKEN_MESSAGE,
                 ) from exc
     return BookingOut(
         code=code,
