@@ -18,7 +18,7 @@ Proyecto 2 · Tópicos Especiales II · Prof. Regis Rivera · UTP
 | Pruebas y evidencia | [`docs/testing.md`](docs/testing.md) |
 
 ## Stack
-FastAPI · SQLAlchemy · PostgreSQL 16 · React + Vite + TS · pytest · Docker Compose · GitHub Actions
+FastAPI · SQLAlchemy · PostgreSQL 16 · React + Vite + TS · pytest · vitest · Docker Compose · GitHub Actions · SonarCloud
 
 ## Ejecutar
 `ADMIN_KEY` es **obligatoria**: si no está definida, `docker compose` falla a propósito en lugar de arrancar con una clave pública. Créala en un `.env` (no versionado) a partir de `.env.example`:
@@ -28,6 +28,11 @@ cp .env.example .env             # y edita ADMIN_KEY con una clave larga y aleat
 docker compose up --build        # api :8000 · web :5173
 docker compose exec api pytest -v
 ```
+
+- **Hot reload:** el código de `src/backend` y `src/frontend` se monta en los contenedores; los cambios se ven sin `--build` (solo hace falta reconstruir si cambian dependencias: `pyproject.toml` o `package.json`).
+- **CORS:** la API solo acepta el origen del frontend (`http://localhost:5173`). Para otro origen, define `CORS_ORIGINS` en `.env` (separados por comas; `*` no se permite).
+- **Frontend:** `cd src/frontend && npm test` (vitest; los tests están en `tests/frontend/`) · `npm run coverage` para ver la cobertura.
+- **Cobertura backend:** `pytest --cov --cov-report=term`.
 
 ## Equipo y roles (rotan por ciclo)
 | Ciclo | Spec Lead | Dev Lead | QA/DevOps Lead |
