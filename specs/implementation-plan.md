@@ -33,4 +33,11 @@
 | T12 | Matriz de evidencia en `docs/testing.md` + README final | todo | todos los AC en PASS |
 
 ## Cambio de requerimiento (a mitad del proyecto)
-Se registrará como **CR-01** siguiendo: cambio solicitado → `requirements.md` / `business-rules.md` → `acceptance-criteria.md` → nueva tarea aquí → código → tests → resultado. Evidencia en `docs/decisions.md`.
+Se registra como **CR-01** siguiendo: cambio solicitado → `requirements.md` / `business-rules.md` → `acceptance-criteria.md` → nueva tarea aquí → código → tests → resultado. Evidencia en `docs/decisions.md`.
+
+### CR-01 · 10 min de limpieza entre citas (Spec Lead: Gabriel · Dev Lead: Isalleth · QA/DevOps: Derlin)
+> Va **antes de T10**, para que la UI muestre desde el inicio la disponibilidad con la regla nueva.
+
+| T | Tarea | Archivos | Dep. | AC / Test |
+|---|-------|----------|------|-----------|
+| T13 (#22) | Limpieza de 10 min (BR-12): constante en reglas puras, disponibilidad y creación de reserva la respetan, columna `blocked_until` + migración Alembic que recrea `no_double_booking`; actualizar los tests que asumían citas pegadas | `domain/rules.py`, `services/availability.py`, `services/booking.py`, `repositories/bookings.py`, `models/`, `alembic/versions/` | T5, T6, T7 | **AC-04 ✏️, AC-11 ✏️, AC-23, AC-24, AC-25** · AC-01…AC-22 siguen en verde |

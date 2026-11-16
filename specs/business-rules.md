@@ -4,7 +4,7 @@
 
 | ID | Regla | Detalle |
 |----|-------|---------|
-| **BR-01** | **No doble reserva** | Dos reservas `CONFIRMADA` del mismo barbero no pueden solaparse. Se solapan si `nueva.inicio < existente.fin` **y** `nueva.fin > existente.inicio`. Intervalos semiabiertos `[inicio, fin)`: una cita que termina 10:30 y otra que empieza 10:30 **no** chocan. |
+| **BR-01** | **No doble reserva** | Dos reservas `CONFIRMADA` del mismo barbero no pueden solaparse. Se solapan si `nueva.inicio < existente.fin` **y** `nueva.fin > existente.inicio`. Intervalos semiabiertos `[inicio, fin)`. **Desde CR-01** el intervalo que se compara incluye la limpieza de BR-12: `[inicio, fin + 10 min)`, así que una cita que termina 10:30 y otra que empieza 10:30 **sí** chocan; la siguiente puede empezar 10:45 (grilla de BR-04). |
 | **BR-02** | Horario laboral | Martes a sábado, 09:00–19:00. La cita debe **empezar y terminar** dentro de ese rango (fin ≤ 19:00). Domingo y lunes cerrado. |
 | **BR-03** | Duración por servicio | `fin = inicio + duración del servicio`. Corte 30, Barba 20, Corte+Barba 45, Diseño/Fade 40 min. |
 | **BR-04** | Grilla de 15 min | Las horas de inicio válidas van en múltiplos de 15 min (09:00, 09:15, …). |
@@ -15,6 +15,7 @@
 | **BR-09** | Datos del cliente | Nombre: 2–60 caracteres. Teléfono Panamá: 8 dígitos empezando por 6 (`6XXX-XXXX`, el guion es opcional). |
 | **BR-10** | Identificación de reserva | Cada reserva tiene un **código** único de 6 caracteres (A-Z, 2-9). Consultar o cancelar exige código **+** teléfono. El código no distingue mayúsculas y minúsculas: se normaliza a mayúsculas antes de buscar. |
 | **BR-11** | Zona horaria | Todo se calcula en America/Panama. |
+| **BR-12** 🆕 CR-01 | Limpieza entre citas | Entre el **fin** de una reserva `CONFIRMADA` y el **inicio** de la siguiente del **mismo barbero** debe haber al menos **10 minutos** de limpieza. Se aplica en ambos sentidos (antes y después de una cita existente), no aplica entre barberos distintos y **no** tiene que caber antes del cierre: un Corte 18:30–19:00 sigue siendo válido aunque la limpieza termine 19:10. Una reserva `CANCELADA` no bloquea limpieza (BR-07). |
 
 ## Estados de una reserva
 
@@ -27,7 +28,7 @@ CONFIRMADA ──(cliente cancela ≥ 2h antes)──► CANCELADA
 
 | Código | HTTP | Regla |
 |--------|------|-------|
-| `SLOT_TAKEN` | 409 | BR-01 |
+| `SLOT_TAKEN` | 409 | BR-01, BR-12 |
 | `OUTSIDE_BUSINESS_HOURS` | 422 | BR-02 |
 | `INVALID_START_TIME` | 422 | BR-04 |
 | `PAST_DATE` | 422 | BR-05 |
@@ -44,7 +45,10 @@ CONFIRMADA ──(cliente cancela ≥ 2h antes)──► CANCELADA
 |----------|----------|
 | ¿Qué pasa si dos clientes toman el mismo horario a la vez? | Solo uno gana; la BD lo garantiza (BR-01 + RNF-01). |
 | ¿Una cita puede terminar después de las 19:00? | No (BR-02). |
-| ¿Citas pegadas (10:00–10:30 y 10:30–11:00) chocan? | No, intervalos `[inicio, fin)`. |
+| ¿Citas pegadas (10:00–10:30 y 10:30–11:00) chocan? | ~~No, intervalos `[inicio, fin)`.~~ **Sí desde CR-01**: el mismo barbero necesita 10 min de limpieza entre citas (BR-12, D9). |
+| ¿La limpieza debe caber antes de las 19:00? | No; solo la cita debe terminar ≤ 19:00 (BR-02). La limpieza puede hacerse después del cierre (D9). |
+| ¿Qué código responde si el choque es solo con la limpieza? | El mismo 409 `SLOT_TAKEN`: para el cliente el horario no está disponible (D9). |
+| ¿Las reservas existentes antes de CR-01 se reacomodan? | No. La migración falla si hay reservas `CONFIRMADA` que violen BR-12; un humano decide cuál cancelar (D9). |
 | ¿El cliente necesita cuenta/login? | No en el MVP: código + teléfono. |
 | ¿Quién ve la agenda? | El admin, con clave `X-Admin-Key`. |
 | ¿Zona horaria? | America/Panama. |

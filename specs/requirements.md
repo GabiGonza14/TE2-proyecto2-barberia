@@ -39,11 +39,16 @@
 | **RF-13** | WHEN el administrador consulta la agenda de una fecha (opcionalmente filtrada por barbero), THEN el sistema SHALL listar las reservas `CONFIRMADA` ordenadas por hora, agrupadas por barbero. | O4 |
 | **RF-14** | IF la petición a la agenda no incluye una clave de administrador válida, THEN el sistema SHALL responder 401 `UNAUTHORIZED`. | O4 |
 
+### Limpieza entre citas 🆕 CR-01
+| ID | Requisito | Outcome |
+|----|-----------|---------|
+| **RF-15** | WHEN el sistema evalúa si un horario está libre (disponibilidad o creación de reserva), THEN SHALL exigir **10 minutos de limpieza** entre el fin de una reserva `CONFIRMADA` y el inicio de otra del mismo barbero (BR-12); IF no se cumple, THEN SHALL rechazar con 409 `SLOT_TAKEN` y no mostrar ese horario en la disponibilidad. | O1, O3 |
+
 ## 2. Requisitos no funcionales
 
 | ID | Requisito |
 |----|-----------|
-| **RNF-01** | La regla de no-doble-reserva SHALL estar garantizada **también a nivel de base de datos** (no solo en código). |
+| **RNF-01** | La regla de no-doble-reserva SHALL estar garantizada **también a nivel de base de datos** (no solo en código). Desde CR-01 incluye los 10 min de limpieza (BR-12). |
 | **RNF-02** | Todas las horas se manejan en zona horaria **America/Panama** (UTC−5, sin horario de verano). |
 | **RNF-03** | Toda regla de negocio (BR-xx) SHALL tener al menos un test automatizado. |
 | **RNF-04** | La consulta de disponibilidad SHALL responder en < 300 ms con datos de prueba (≈ 500 reservas). |
@@ -54,8 +59,8 @@
 
 | Outcome | Requisitos |
 |---------|------------|
-| O1 Cero cruces | RF-06, RF-07, RNF-01 |
+| O1 Cero cruces | RF-06, RF-07, RF-15, RNF-01 |
 | O2 Reserva autónoma | RF-01, RF-02, RF-05, RF-09, RF-10, RNF-05 |
-| O3 Solo horarios reales | RF-03, RF-04, RF-08 |
+| O3 Solo horarios reales | RF-03, RF-04, RF-08, RF-15 |
 | O4 Agenda del día | RF-13, RF-14 |
 | O5 Recuperar espacios | RF-11, RF-12 |
