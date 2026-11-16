@@ -12,7 +12,7 @@ from app.services.booking import create_booking
 router = APIRouter(prefix="/api/v1", tags=["bookings"])
 
 
-@router.post("/bookings", response_model=BookingOut, status_code=201)
+@router.post("/bookings", status_code=201)
 def post_booking(
     data: BookingCreate,
     db: Annotated[Session, Depends(get_db)],
