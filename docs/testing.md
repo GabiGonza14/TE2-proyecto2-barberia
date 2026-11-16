@@ -21,16 +21,16 @@ Ejecutar: `docker compose up -d db && pytest -v`
 ## Matriz de evidencia (Verify & Converge)
 | AC | Requisito | Test | Estado |
 |----|-----------|------|--------|
-| AC-01 | RF-05 | test_create_booking_success | ⏳ |
-| AC-02 ⭐ | RF-06 / BR-01 | test_double_booking_rejected | ⏳ |
-| AC-03 ⭐ | RF-06 / BR-01 | test_partial_overlap_rejected | ⏳ |
-| AC-04 | BR-01 | test_adjacent_bookings_allowed | ⏳ |
-| AC-05 | BR-01 | test_same_time_different_barber_allowed | ⏳ |
+| AC-01 | RF-05 | test_create_booking_success | ✅ PASS |
+| AC-02 ⭐ | RF-06 / BR-01 | test_double_booking_rejected | ✅ PASS |
+| AC-03 ⭐ | RF-06 / BR-01 | test_partial_overlap_rejected | ✅ PASS |
+| AC-04 | BR-01 | test_adjacent_bookings_allowed | ✅ PASS |
+| AC-05 | BR-01 | test_same_time_different_barber_allowed | ✅ PASS |
 | AC-06 ⭐ | RF-07 / RNF-01 | test_concurrent_double_booking | ⏳ |
-| AC-07 | BR-02 | test_outside_business_hours | ⏳ |
-| AC-08 | BR-04 | test_start_not_on_grid | ⏳ |
-| AC-09 | BR-05 | test_booking_window | ⏳ |
-| AC-10 | BR-09 | test_client_validation | ⏳ |
+| AC-07 | BR-02 | test_outside_business_hours | ✅ PASS |
+| AC-08 | BR-04 | test_start_not_on_grid | ✅ PASS |
+| AC-09 | BR-05 | test_booking_window | ✅ PASS |
+| AC-10 | BR-09 | test_client_validation | ✅ PASS |
 | AC-11 | RF-03 | test_availability_excludes_taken | ✅ PASS |
 | AC-12 | RF-04 | test_availability_closed_day | ✅ PASS |
 | AC-13 | RF-11 / BR-07 | test_cancel_frees_slot | ⏳ |
