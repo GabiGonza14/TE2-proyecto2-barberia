@@ -1,7 +1,9 @@
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.core.config import cors_origins
 from app.core.errors import (
     ALREADY_CANCELLED,
     BARBER_INACTIVE,
@@ -39,6 +41,13 @@ ERROR_STATUS = {
 ERROR_HEADERS = {UNAUTHORIZED: {"WWW-Authenticate": 'X-Admin-Key realm="admin"'}}
 
 app = FastAPI(title="BarberBook API")
+# architecture.md §5: CORS limitado al origen del frontend (CORS_ORIGINS).
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=cors_origins(),
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type", "X-Admin-Key"],
+)
 app.include_router(catalog_router)
 app.include_router(availability_router)
 app.include_router(bookings_router)
