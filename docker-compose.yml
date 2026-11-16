@@ -21,7 +21,9 @@ services:
       dockerfile: src/backend/Dockerfile
     environment:
       DB_URL: ${DB_URL:-postgresql+psycopg://barberbook:barberbook@db:5432/barberbook}
-      ADMIN_KEY: ${ADMIN_KEY:-change-me}
+      # Obligatoria: sin ADMIN_KEY en .env, `docker compose` falla en vez de
+      # arrancar con una clave pública por defecto.
+      ADMIN_KEY: ${ADMIN_KEY:?Define ADMIN_KEY en .env}
     depends_on:
       db:
         condition: service_healthy

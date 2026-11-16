@@ -1,7 +1,7 @@
 from datetime import date, datetime, time, timedelta
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.domain.rules import TZ
 from app.models.booking import STATUS_CONFIRMED, Booking
@@ -79,3 +79,26 @@ def get_by_code(
     if for_update:
         statement = statement.with_for_update()
     return db.scalars(statement).one_or_none()
+
+
+
+def confirmed_bookings_for_agenda(
+    db: Session, day: date, barber_id: int | None = None
+) -> list[Booking]:
+    """Reservas CONFIRMADA que caen en `day` (America/Panama), con barbero y
+    servicio cargados en la misma consulta (sin N+1), ordenadas por hora."""
+    day_start = datetime.combine(day, time.min, TZ)
+    day_end = day_start + timedelta(days=1)
+    statement = (
+        select(Booking)
+        .options(joinedload(Booking.barber), joinedload(Booking.service))
+        .where(
+            Booking.status == STATUS_CONFIRMED,
+            Booking.start_at < day_end,
+            Booking.end_at > day_start,
+        )
+        .order_by(Booking.start_at, Booking.id)
+    )
+    if barber_id is not None:
+        statement = statement.where(Booking.barber_id == barber_id)
+    return list(db.scalars(statement))

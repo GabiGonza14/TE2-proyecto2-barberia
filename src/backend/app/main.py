@@ -16,6 +16,7 @@ from app.core.errors import (
     VALIDATION_ERROR,
     DomainError,
 )
+from app.routers.admin import router as admin_router
 from app.routers.availability import router as availability_router
 from app.routers.bookings import router as bookings_router
 from app.routers.catalog import router as catalog_router
@@ -34,10 +35,14 @@ ERROR_STATUS = {
     UNAUTHORIZED: 401,
 }
 
+# RFC 9110: el 401 debe indicar el esquema de autenticación (RF-14).
+ERROR_HEADERS = {UNAUTHORIZED: {"WWW-Authenticate": 'X-Admin-Key realm="admin"'}}
+
 app = FastAPI(title="BarberBook API")
 app.include_router(catalog_router)
 app.include_router(availability_router)
 app.include_router(bookings_router)
+app.include_router(admin_router)
 
 
 @app.exception_handler(DomainError)
@@ -54,6 +59,7 @@ async def domain_error_handler(
                 "details": details,
             }
         },
+        headers=ERROR_HEADERS.get(exc.code),
     )
 
 

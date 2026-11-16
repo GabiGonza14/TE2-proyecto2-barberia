@@ -21,7 +21,10 @@ Proyecto 2 · Tópicos Especiales II · Prof. Regis Rivera · UTP
 FastAPI · SQLAlchemy · PostgreSQL 16 · React + Vite + TS · pytest · Docker Compose · GitHub Actions
 
 ## Ejecutar
+`ADMIN_KEY` es **obligatoria**: si no está definida, `docker compose` falla a propósito en lugar de arrancar con una clave pública. Créala en un `.env` (no versionado) a partir de `.env.example`:
+
 ```bash
+cp .env.example .env             # y edita ADMIN_KEY con una clave larga y aleatoria
 docker compose up --build        # api :8000 · web :5173
 docker compose exec api pytest -v
 ```
