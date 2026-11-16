@@ -1,8 +1,13 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from psycopg.errors import ExclusionViolation, UniqueViolation
-from sqlalchemy.exc import IntegrityError
+from psycopg.errors import (
+    DeadlockDetected,
+    ExclusionViolation,
+    SerializationFailure,
+    UniqueViolation,
+)
+from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.orm import Session
 
 from app.core.errors import (
@@ -23,6 +28,13 @@ from app.repositories.catalog import get_barber, get_service
 from app.schemas.bookings import BookingCreate, BookingOut
 
 MAX_CODE_ATTEMPTS = 5
+
+# Dos INSERT simultáneos que chocan en no_double_booking pueden terminar en
+# deadlock (cada uno espera al otro) en lugar de ExclusionViolation.
+# Se reintenta UNA vez: en el reintento la capa 1 ya ve al ganador → 409.
+# Ver docs/decisions.md (D7) y tests/backend/integration/test_concurrency.py.
+RACE_ERRORS = (DeadlockDetected, SerializationFailure)
+MAX_RACE_ATTEMPTS = 2
 
 
 @dataclass(frozen=True)
@@ -142,11 +154,29 @@ def _persist_booking(
     raise RuntimeError("No se pudo generar un código de reserva")
 
 
+def _book_once(
+    db: Session, data: BookingCreate, now: datetime
+) -> tuple[_ValidatedBooking, str]:
+    validated = _validate_booking(db, data, now)
+    return validated, _persist_booking(db, data, validated)
+
+
 def create_booking(
     db: Session, data: BookingCreate, now: datetime
 ) -> BookingOut:
-    validated = _validate_booking(db, data, now)
-    code = _persist_booking(db, data, validated)
+    for attempt in range(MAX_RACE_ATTEMPTS):
+        try:
+            validated, code = _book_once(db, data, now)
+            break
+        except OperationalError as exc:
+            if not isinstance(exc.orig, RACE_ERRORS):
+                raise
+            db.rollback()
+            if attempt == MAX_RACE_ATTEMPTS - 1:
+                raise DomainError(
+                    SLOT_TAKEN,
+                    "El barbero ya tiene una cita en ese horario",
+                ) from exc
     return BookingOut(
         code=code,
         status=STATUS_CONFIRMED,
