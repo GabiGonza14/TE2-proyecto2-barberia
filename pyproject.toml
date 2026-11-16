@@ -19,6 +19,7 @@ dependencies = [
 test = [
     "httpx>=0.28,<1",
     "pytest>=8,<10",
+    "pytest-cov>=6,<8",
 ]
 
 [tool.setuptools]
@@ -31,3 +32,8 @@ where = ["src/backend"]
 addopts = "-ra"
 pythonpath = ["src/backend"]
 testpaths = ["tests/backend"]
+
+[tool.coverage.run]
+# Rutas relativas al repo para que SonarCloud asocie coverage.xml con el código.
+source = ["src/backend/app"]
+relative_files = true

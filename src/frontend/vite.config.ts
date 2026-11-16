@@ -34,5 +34,7 @@ export default defineConfig({
     dir: "../../tests/frontend",
     include: ["**/*.test.{ts,tsx}"],
     environment: "jsdom",
+    // lcov para SonarCloud (sonar.javascript.lcov.reportPaths).
+    coverage: { provider: "v8", include: ["src/**/*.{ts,tsx}"], exclude: ["src/main.tsx", "src/**/*.d.ts"], reporter: ["text", "lcov"] },
   },
 });
