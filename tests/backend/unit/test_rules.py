@@ -234,8 +234,11 @@ def test_can_cancel(notice: timedelta, allowed: bool) -> None:
 
 
 def test_can_cancel_rejects_naive_datetimes() -> None:
+    naive_start = datetime(2026, 12, 1, 10, 0)
+    now = at(1, 7)
+
     with pytest.raises(ValueError):
-        can_cancel(datetime(2026, 12, 1, 10, 0), at(1, 7))
+        can_cancel(naive_start, now)
 
 
 # ---------------------------------------------------------------- BR-10 (T8)
