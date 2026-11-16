@@ -16,6 +16,7 @@ from app.core.errors import (
     VALIDATION_ERROR,
     DomainError,
 )
+from app.routers.admin import router as admin_router
 from app.routers.availability import router as availability_router
 from app.routers.bookings import router as bookings_router
 from app.routers.catalog import router as catalog_router
@@ -38,6 +39,7 @@ app = FastAPI(title="BarberBook API")
 app.include_router(catalog_router)
 app.include_router(availability_router)
 app.include_router(bookings_router)
+app.include_router(admin_router)
 
 
 @app.exception_handler(DomainError)
