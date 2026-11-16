@@ -26,7 +26,7 @@ from app.domain.rules import TZ
 from app.main import app
 
 FIXED_NOW = datetime(2026, 12, 1, 8, 0, tzinfo=TZ)
-ROUNDS = 20
+ROUNDS = 50  # la issue #11 exige ≥ 50 rondas automatizadas
 BARRIER_TIMEOUT = 10
 
 
@@ -150,22 +150,33 @@ def test_db_layer_catches_race(
     """Ambas peticiones pasan la capa 1 a la vez (nadie ve conflicto) → la BD decide."""
     ids = _ids(engine)
     real_find = bookings_repository.find_overlapping
-    gate: dict[str, threading.Barrier | None] = {"barrier": None}
+    gate: dict[str, Any] = {"barrier": None, "arrivals": 0, "retries": 0}
+    gate_lock = threading.Lock()
 
     def find_then_wait(*args: Any, **kwargs: Any):
         found = real_find(*args, **kwargs)
-        barrier = gate["barrier"]
-        if barrier is not None:
-            barrier.wait()  # las dos ya consultaron: ninguna vio a la otra
+        with gate_lock:
+            gate["arrivals"] += 1
+            # Solo las 2 consultas INICIALES de cada ronda esperan en la barrera.
+            # Si PostgreSQL aborta un INSERT por deadlock, create_booking reintenta
+            # y vuelve a consultar: ese reintento NO debe esperar (ya no hay otro hilo).
+            must_wait = gate["arrivals"] <= 2
+            if not must_wait:
+                gate["retries"] += 1
+        if must_wait:
+            gate["barrier"].wait()  # las dos ya consultaron: ninguna vio a la otra
         return found
 
     monkeypatch.setattr(bookings_repository, "find_overlapping", find_then_wait)
 
     for n, start in enumerate(_slots(ROUNDS)):
         gate["barrier"] = threading.Barrier(2, timeout=BARRIER_TIMEOUT)
+        gate["arrivals"] = 0
         results = _race([_body(ids, start, n=1), _body(ids, start, n=2)])
         assert sorted(r[0] for r in results) == [201, 409], f"ronda {n}: {results}"
+        assert (409, "SLOT_TAKEN") in results
 
+    # gate["retries"] cuenta los deadlocks reales que el reintento resolvió.
     assert len(_confirmed(engine)) == ROUNDS
 
 
@@ -248,5 +259,7 @@ def test_other_operational_errors_are_not_masked(
 
     monkeypatch.setattr(bookings_repository, "add_booking", connection_lost)
 
+    request = _post(_body(ids, datetime(2026, 12, 1, 10, 0, tzinfo=TZ)))
+
     with pytest.raises(OperationalError):
-        asyncio.run(_post(_body(ids, datetime(2026, 12, 1, 10, 0, tzinfo=TZ))))
+        asyncio.run(request)
