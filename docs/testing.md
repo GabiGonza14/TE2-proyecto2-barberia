@@ -39,3 +39,8 @@ Ejecutar: `docker compose up -d db && pytest -v`
 | AC-15 | RF-10 | test_lookup_requires_phone | ⏳ |
 | AC-16 | RF-13 | test_agenda_of_day | ⏳ |
 | AC-17 | RF-14 | test_agenda_requires_admin | ⏳ |
+| AC-18 | RF-11 / BR-06 | test_cancel_exactly_two_hours_before | ⏳ |
+| AC-19 | RF-11 | test_cancel_already_cancelled | ⏳ |
+| AC-20 | BR-10 | test_lookup_code_case_insensitive | ⏳ |
+| AC-21 | RF-13 | test_agenda_lists_barbers_without_bookings | ⏳ |
+| AC-22 | RF-13 | test_agenda_defaults_to_today | ⏳ |
