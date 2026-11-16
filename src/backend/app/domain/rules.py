@@ -24,6 +24,9 @@ MAX_DAYS_AHEAD = 14
 # BR-06 · se puede cancelar con 2 h o más de anticipación (D8: 2 h exactas sí)
 CANCEL_MIN_NOTICE = timedelta(hours=2)
 
+# BR-12 · limpieza de 10 min tras cada cita del mismo barbero (CR-01)
+CLEANUP_BUFFER = timedelta(minutes=10)
+
 # BR-09 · datos del cliente
 # Se usa [0-9] y no \d a propósito: en Python \d acepta dígitos Unicode (p. ej. "٦١٢٣").
 _PHONE_RE = re.compile(r"^6[0-9]{3}-?[0-9]{4}$")
@@ -52,6 +55,15 @@ def compute_end(start: datetime, duration_min: int) -> datetime:
     if duration_min <= 0:
         raise ValueError("La duración debe ser positiva")
     return start + timedelta(minutes=duration_min)
+
+
+def blocked_until(end: datetime) -> datetime:
+    """BR-12 · fin del bloqueo del barbero: fin real + limpieza (10 min).
+
+    El fin real (`end_at`) sigue siendo el que devuelve la API; este valor solo
+    se usa para detectar choques y lo persiste la BD en `blocked_until`.
+    """
+    return _local(end) + CLEANUP_BUFFER
 
 
 def is_open_day(day: date) -> bool:

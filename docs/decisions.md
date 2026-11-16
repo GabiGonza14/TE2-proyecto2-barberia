@@ -22,6 +22,6 @@
 | 2. Especificación | `business-rules.md` → **BR-12** nueva, BR-01 actualizada, Clarify; `requirements.md` → **RF-15** nuevo, RNF-01; `data-model.md` → `blocked_until` y `no_double_booking`; `api.md` → notas de disponibilidad y 409 |
 | 3. Criterios | `acceptance-criteria.md` → **AC-04 y AC-11 modificados**, **AC-23, AC-24, AC-25 nuevos** |
 | 4. Plan / tareas | `implementation-plan.md` → **T13** (antes de T10) |
-| 5. Código | *(pendiente · T13 #22, rama `feat/T13-limpieza-entre-citas`)* |
-| 6. Pruebas | *(pendiente · tests en 🔴 primero)* |
-| 7. Resultados | *(pendiente · matriz de `testing.md` y CI)* |
+| 5. Código | T13 (**#22**, rama `feat/T13-limpieza-entre-citas`): `domain/rules.py` (`CLEANUP_BUFFER`, `blocked_until`), `services/availability.py`, `services/booking.py`, `repositories/bookings.py`, `models/booking.py` (columna, CHECK y listener `before_insert`) y migración `0002_t13_cleanup` (columna → backfill → NOT NULL + CHECK → `no_double_booking` sobre `tstzrange(start_at, blocked_until, '[)')`). Commits 🔴 `808d78e` → 🟢 `5ff6402` |
+| 6. Pruebas | Tests primero (rojo): AC-04 `test_buffer_after_booking`, AC-11 `test_availability_excludes_taken`, AC-23 `test_buffer_before_existing_booking`, AC-24 `test_db_enforces_buffer`, AC-25 `test_buffer_may_end_after_closing`; ajustes `test_db_rejects_adjacent_bookings` y fixtures de concurrencia (inicios cada 45 min). En verde: 82 unitarios en local, integración contra PostgreSQL en CI |
+| 7. Resultados | PR **#25**; CI en verde (`backend-tests`, `frontend`, `sonarcloud`, `SonarCloud Code Analysis`); AC-04/11/23/24/25 en ✅ en `testing.md`; `api.md` sin cambios (mismo JSON y `end_at` real) |

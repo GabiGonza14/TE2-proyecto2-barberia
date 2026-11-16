@@ -102,9 +102,10 @@ def _confirmed(engine: Engine) -> list[tuple[datetime, datetime]]:
 
 
 def _slots(rounds: int) -> list[datetime]:
-    """Inicios de 30 min (sin solaparse entre rondas) en días hábiles."""
+    """Inicios cada 45 min (30 de cita + 10 de limpieza + margen) en días
+    hábiles; caben 13 por día hasta las 18:00."""
     days = [datetime(2026, 12, d, 9, 0, tzinfo=TZ) for d in (1, 2, 3, 4, 5)]
-    starts = [d + timedelta(minutes=30 * i) for d in days for i in range(20)]
+    starts = [d + timedelta(minutes=45 * i) for d in days for i in range(13)]
     return starts[:rounds]
 
 

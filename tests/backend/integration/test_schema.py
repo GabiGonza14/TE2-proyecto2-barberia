@@ -38,6 +38,7 @@ def test_migration_applies(engine: Engine) -> None:
         }
         assert {
             "ck_bookings_end_after_start",
+            "ck_bookings_blocked_until",
             "ck_services_duration_positive",
             "ck_services_price_non_negative",
         } <= check_constraints

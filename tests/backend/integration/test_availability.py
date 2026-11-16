@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import httpx
 import pytest
@@ -58,10 +58,10 @@ def insert_booking(
                 """
                 INSERT INTO bookings (
                     code, barber_id, service_id, client_name, client_phone,
-                    start_at, end_at, status
+                    start_at, end_at, blocked_until, status
                 ) VALUES (
                     :code, :barber_id, :service_id, 'Cliente Prueba',
-                    '60000000', :start_at, :end_at, :status
+                    '60000000', :start_at, :end_at, :blocked_until, :status
                 )
                 """
             ),
@@ -71,6 +71,7 @@ def insert_booking(
                 "service_id": service_id,
                 "start_at": start_at,
                 "end_at": end_at,
+                "blocked_until": end_at + timedelta(minutes=10),
                 "status": status,
             },
         )
@@ -104,11 +105,10 @@ def test_availability_excludes_taken(engine: Engine) -> None:
     assert body["barber_id"] == carlos_id
     assert body["service_id"] == corte_id
     assert body["reason"] is None
-    assert "09:30" in body["slots"]
-    assert "09:45" not in body["slots"]
-    assert "10:00" not in body["slots"]
-    assert "10:15" not in body["slots"]
-    assert "10:30" in body["slots"]
+    assert "09:15" in body["slots"]
+    for blocked in ("09:30", "09:45", "10:00", "10:15", "10:30"):
+        assert blocked not in body["slots"]
+    assert "10:45" in body["slots"]
     assert body["slots"][-1] == "18:30"
 
 

@@ -16,7 +16,9 @@ from app.core.errors import (
     DomainError,
 )
 from app.domain.rules import (
+    CLEANUP_BUFFER,
     TZ,
+    blocked_until,
     can_cancel,
     normalize_booking_code,
     check_booking_window,
@@ -53,9 +55,10 @@ NAIVE = datetime(2026, 12, 1, 10, 0)
         lambda: overlaps(NAIVE, NAIVE + timedelta(minutes=30), at(1, 10), at(1, 10, 30)),
         lambda: overlaps(at(1, 10), at(1, 10, 30), NAIVE, NAIVE + timedelta(minutes=30)),
         lambda: compute_end(NAIVE, 30),
+        lambda: blocked_until(NAIVE),
     ],
     ids=["is_on_grid", "is_within_business_hours", "check_booking_window",
-         "overlaps_a", "overlaps_b", "compute_end"],
+         "overlaps_a", "overlaps_b", "compute_end", "blocked_until"],
 )
 def test_naive_datetime_is_rejected(call) -> None:
     """BR-11: toda función que recibe datetimes exige zona horaria."""
@@ -106,6 +109,20 @@ def test_compute_end_uses_service_duration(minutes: int, end: tuple[int, int]) -
 def test_compute_end_rejects_non_positive_duration(minutes: int) -> None:
     with pytest.raises(ValueError):
         compute_end(at(1, 10), minutes)
+
+
+# ---------------------------------------------------------------- BR-12
+def test_cleanup_buffer_is_ten_minutes() -> None:
+    assert CLEANUP_BUFFER == timedelta(minutes=10)
+
+
+def test_blocked_until_adds_cleanup_to_service_end() -> None:
+    assert blocked_until(at(1, 10, 30)) == at(1, 10, 40)
+
+
+def test_blocked_until_may_cross_closing_time() -> None:
+    # AC-25: la cita termina a las 19:00; la limpieza llega a 19:10.
+    assert blocked_until(at(1, 19)) == at(1, 19, 10)
 
 
 # ---------------------------------------------------------------- BR-02

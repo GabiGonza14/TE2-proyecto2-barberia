@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 import httpx
@@ -77,10 +77,10 @@ def insert_booking(
                 """
                 INSERT INTO bookings (
                     code, barber_id, service_id, client_name, client_phone,
-                    start_at, end_at, status
+                    start_at, end_at, blocked_until, status
                 ) VALUES (
                     :code, :barber_id, :service_id, 'Cliente Existente',
-                    '60000000', :start_at, :end_at, :status
+                    '60000000', :start_at, :end_at, :blocked_until, :status
                 )
                 """
             ),
@@ -90,6 +90,7 @@ def insert_booking(
                 "service_id": service_id,
                 "start_at": start_at,
                 "end_at": end_at,
+                "blocked_until": end_at + timedelta(minutes=10),
                 "status": status,
             },
         )
@@ -169,7 +170,9 @@ def test_partial_overlap_rejected(engine: Engine) -> None:
     assert booking_count(engine) == 1
 
 
-def test_adjacent_bookings_allowed(engine: Engine) -> None:
+def test_buffer_after_booking(engine: Engine) -> None:
+    """AC-04 · BR-12: tras una cita 10:00–10:30, 10:30 choca con la limpieza
+    (bloqueado hasta 10:40); 10:45 ya se puede reservar."""
     ids = catalog_ids(engine)
     insert_booking(
         engine,
@@ -180,14 +183,78 @@ def test_adjacent_bookings_allowed(engine: Engine) -> None:
         end_at=datetime(2026, 12, 1, 10, 30, tzinfo=TZ),
     )
 
-    response = asyncio.run(
+    adjacent = asyncio.run(
         post_booking(
             payload(ids, start_at="2026-12-01T10:30:00-05:00")
         )
     )
 
-    assert response.status_code == 201
+    assert adjacent.status_code == 409
+    assert adjacent.json()["error"]["code"] == "SLOT_TAKEN"
+    assert booking_count(engine) == 1
+
+    later = asyncio.run(
+        post_booking(
+            payload(ids, start_at="2026-12-01T10:45:00-05:00")
+        )
+    )
+
+    assert later.status_code == 201
     assert booking_count(engine) == 2
+
+
+def test_buffer_before_existing_booking(engine: Engine) -> None:
+    """AC-23 · BR-12: una cita 09:30–10:00 choca con la limpieza de la cita
+    existente 10:00–10:30 (bloqueada desde 09:50); 09:15–09:45 sí cabe."""
+    ids = catalog_ids(engine)
+    insert_booking(
+        engine,
+        code="GGG222",
+        barber_id=ids["barber_Carlos"],
+        service_id=ids["service_Corte"],
+        start_at=datetime(2026, 12, 1, 10, 0, tzinfo=TZ),
+        end_at=datetime(2026, 12, 1, 10, 30, tzinfo=TZ),
+    )
+
+    before = asyncio.run(
+        post_booking(
+            payload(ids, start_at="2026-12-01T09:30:00-05:00")
+        )
+    )
+
+    assert before.status_code == 409
+    assert before.json()["error"]["code"] == "SLOT_TAKEN"
+    assert booking_count(engine) == 1
+
+    earlier = asyncio.run(
+        post_booking(
+            payload(ids, start_at="2026-12-01T09:15:00-05:00")
+        )
+    )
+
+    assert earlier.status_code == 201
+    assert earlier.json()["end_at"] == "2026-12-01T09:45:00-05:00"
+    assert booking_count(engine) == 2
+
+
+def test_buffer_may_end_after_closing(engine: Engine) -> None:
+    """AC-25 · BR-02/BR-12: el Corte 18:30–19:00 es válido aunque la limpieza
+    termine 19:10; la limpieza no tiene que caber antes del cierre."""
+    ids = catalog_ids(engine)
+
+    response = asyncio.run(
+        post_booking(
+            payload(ids, start_at="2026-12-01T18:30:00-05:00")
+        )
+    )
+
+    assert response.status_code == 201
+    assert response.json()["end_at"] == "2026-12-01T19:00:00-05:00"
+    with engine.connect() as conn:
+        blocked_until = conn.execute(
+            text("SELECT blocked_until FROM bookings")
+        ).scalar_one()
+    assert blocked_until == datetime(2026, 12, 1, 19, 10, tzinfo=TZ)
 
 
 def test_same_time_different_barber_allowed(engine: Engine) -> None:
