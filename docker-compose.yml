@@ -24,6 +24,14 @@ services:
       # Obligatoria: sin ADMIN_KEY en .env, `docker compose` falla en vez de
       # arrancar con una clave pública por defecto.
       ADMIN_KEY: ${ADMIN_KEY:?Define ADMIN_KEY en .env}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+      # Docker en Windows/macOS no propaga eventos de archivos: --reload por sondeo.
+      WATCHFILES_FORCE_POLLING: "true"
+    # Hot reload: el código se monta desde el repo, no hace falta --build.
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "src/backend"]
+    volumes:
+      - ./src/backend:/app/src/backend
+      - ./tests:/app/tests
     depends_on:
       db:
         condition: service_healthy
@@ -33,6 +41,12 @@ services:
   web:
     build:
       context: src/frontend
+    environment:
+      VITE_USE_POLLING: "true"
+    # Hot reload: Vite sirve el código montado; node_modules se queda en el contenedor.
+    volumes:
+      - ./src/frontend:/app
+      - /app/node_modules
     depends_on:
       api:
         condition: service_started

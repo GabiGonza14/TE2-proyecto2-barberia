@@ -1,6 +1,42 @@
-import { defineConfig } from "vite";
+/// <reference types="vitest/config" />
+import { fileURLToPath } from "node:url";
+
 import react from "@vitejs/plugin-react";
+import { defineConfig, type Plugin } from "vite";
+
+// architecture.md §6: los tests del frontend viven en tests/frontend/, fuera de
+// src/frontend. Sus imports de paquetes (react, vitest…) se resuelven como si
+// estuvieran aquí, para usar este node_modules.
+const frontendEntry = fileURLToPath(new URL("./src/main.tsx", import.meta.url));
+
+function resolveTestsFromFrontend(): Plugin {
+  return {
+    name: "resolve-tests-from-frontend",
+    enforce: "pre",
+    resolveId(source, importer, options) {
+      const isBare = !source.startsWith(".") && !source.startsWith("/") && !source.startsWith("\0");
+      if (!importer?.includes("/tests/frontend/") || !isBare) return null;
+      return this.resolve(source, frontendEntry, { ...options, skipSelf: true });
+    },
+  };
+}
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), resolveTestsFromFrontend()],
+  server: {
+    // Solo vitest necesita leer tests/frontend/. El servidor de desarrollo se queda
+    // con la restricción por defecto: si no, /@fs/ expone archivos (en Docker, todo
+    // el contenedor, p. ej. /@fs/etc/passwd).
+    fs: process.env.VITEST ? { allow: [".", "../../tests/frontend"] } : undefined,
+    // Docker en Windows/macOS no propaga eventos de archivos al contenedor:
+    // con VITE_USE_POLLING=true Vite revisa los cambios por sondeo (hot reload).
+    watch: process.env.VITE_USE_POLLING === "true" ? { usePolling: true, interval: 300 } : undefined,
+  },
+  test: {
+    dir: "../../tests/frontend",
+    include: ["**/*.test.{ts,tsx}"],
+    environment: "jsdom",
+    // lcov para SonarCloud (sonar.javascript.lcov.reportPaths).
+    coverage: { provider: "v8", include: ["src/**/*.{ts,tsx}"], exclude: ["src/main.tsx", "src/**/*.d.ts"], reporter: ["text", "lcov"] },
+  },
 });

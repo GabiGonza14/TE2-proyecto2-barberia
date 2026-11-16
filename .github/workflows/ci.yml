@@ -42,5 +42,77 @@ jobs:
       - name: Install dependencies
         run: python -m pip install -e ".[test]"
 
-      - name: Run backend tests
-        run: pytest -v
+      - name: Run backend tests (con cobertura)
+        run: pytest -v --cov --cov-report=xml --cov-report=term
+
+      - name: Upload backend coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: coverage.xml
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/frontend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: src/frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Build (tsc + vite)
+        run: npm run build
+
+      - name: Run vitest (con cobertura)
+        run: npm run coverage
+
+      - name: Rutas de lcov relativas al repo (para SonarCloud)
+        run: sed -i 's#^SF:#SF:src/frontend/#' coverage/lcov.info
+
+      - name: Upload frontend coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: src/frontend/coverage/lcov.info
+
+  sonarcloud:
+    # Análisis con cobertura. Requiere el secret SONAR_TOKEN y desactivar el
+    # "Automatic Analysis" en SonarCloud; sin el secret el paso se omite.
+    needs: [backend-tests, frontend]
+    runs-on: ubuntu-latest
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download backend coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-coverage
+
+      - name: Download frontend coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-coverage
+          path: src/frontend/coverage
+
+      - name: SonarCloud scan
+        if: env.SONAR_TOKEN != ''
+        uses: SonarSource/sonarqube-scan-action@59202af334b4ba7b5db01b701b8e79f8b3bef0f4 # v8.5.0
+
+      - name: Aviso si falta SONAR_TOKEN
+        if: env.SONAR_TOKEN == ''
+        run: echo "::notice::SONAR_TOKEN no configurado; se omite el análisis con cobertura (sigue el Automatic Analysis)." 
