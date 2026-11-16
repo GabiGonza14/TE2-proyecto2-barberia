@@ -3,6 +3,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.core.errors import (
+    ALREADY_CANCELLED,
     BARBER_INACTIVE,
     CANCEL_WINDOW_CLOSED,
     INVALID_START_TIME,
@@ -26,6 +27,7 @@ ERROR_STATUS = {
     PAST_DATE: 422,
     TOO_FAR_AHEAD: 422,
     CANCEL_WINDOW_CLOSED: 409,
+    ALREADY_CANCELLED: 409,
     BARBER_INACTIVE: 422,
     NOT_FOUND: 404,
     VALIDATION_ERROR: 422,

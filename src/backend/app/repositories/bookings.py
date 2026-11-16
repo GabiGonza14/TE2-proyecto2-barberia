@@ -67,3 +67,15 @@ def add_booking(
     db.add(booking)
     db.flush()
     return booking
+
+
+def get_by_code(
+    db: Session, code: str, *, for_update: bool = False
+) -> Booking | None:
+    """Busca una reserva por código. Con for_update bloquea la fila
+    (SELECT … FOR UPDATE) para que dos cancelaciones simultáneas no
+    pisen la misma reserva."""
+    statement = select(Booking).where(Booking.code == code)
+    if for_update:
+        statement = statement.with_for_update()
+    return db.scalars(statement).one_or_none()
