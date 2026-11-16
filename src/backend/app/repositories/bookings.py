@@ -24,3 +24,46 @@ def confirmed_bookings_for_day(
             .order_by(Booking.start_at)
         )
     )
+
+
+def find_overlapping(
+    db: Session, barber_id: int, start: datetime, end: datetime
+) -> list[Booking]:
+    return list(
+        db.scalars(
+            select(Booking)
+            .where(
+                Booking.barber_id == barber_id,
+                Booking.status == STATUS_CONFIRMED,
+                Booking.start_at < end,
+                Booking.end_at > start,
+            )
+            .order_by(Booking.start_at)
+        )
+    )
+
+
+def add_booking(
+    db: Session,
+    *,
+    code: str,
+    barber_id: int,
+    service_id: int,
+    client_name: str,
+    client_phone: str,
+    start_at: datetime,
+    end_at: datetime,
+) -> Booking:
+    booking = Booking(
+        code=code,
+        barber_id=barber_id,
+        service_id=service_id,
+        client_name=client_name,
+        client_phone=client_phone,
+        start_at=start_at,
+        end_at=end_at,
+        status=STATUS_CONFIRMED,
+    )
+    db.add(booking)
+    db.flush()
+    return booking

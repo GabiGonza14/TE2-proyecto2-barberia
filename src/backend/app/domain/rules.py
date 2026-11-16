@@ -1,6 +1,7 @@
 """Reglas de negocio puras (sin BD ni HTTP). Ver specs/business-rules.md."""
 
 import re
+import secrets
 from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
@@ -24,6 +25,9 @@ MAX_DAYS_AHEAD = 14
 # Se usa [0-9] y no \d a propósito: en Python \d acepta dígitos Unicode (p. ej. "٦١٢٣").
 _PHONE_RE = re.compile(r"^6[0-9]{3}-?[0-9]{4}$")
 NAME_MIN, NAME_MAX = 2, 60
+
+# BR-10 · sin caracteres ambiguos (I, O, 0, 1)
+BOOKING_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
 
 def _local(dt: datetime) -> datetime:
@@ -105,3 +109,8 @@ def validate_name(name: str) -> str:
             field="client_name",
         )
     return value
+
+
+def generate_booking_code() -> str:
+    """BR-10 · código criptográficamente aleatorio de 6 caracteres."""
+    return "".join(secrets.choice(BOOKING_CODE_ALPHABET) for _ in range(6))
