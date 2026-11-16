@@ -25,6 +25,8 @@
 | **AC-18** | RF-11 · BR-06 | **Dado** que faltan exactamente 2 horas para la cita, **cuando** la cancelo, **entonces** responde 200 y queda `CANCELADA`. | `test_cancel_exactly_two_hours_before` |
 | **AC-19** | RF-11 | **Dado** una reserva ya `CANCELADA`, **cuando** intento cancelarla de nuevo, **entonces** responde 409 `ALREADY_CANCELLED`. | `test_cancel_already_cancelled` |
 | **AC-20** | BR-10 | **Dado** un código de reserva en mayúsculas, **cuando** consulto con el código en minúsculas y el teléfono correcto, **entonces** responde 200. | `test_lookup_code_case_insensitive` |
+| **AC-21** | RF-13 | **Dado** un barbero activo sin citas en la fecha consultada, **cuando** el admin pide la agenda, **entonces** el barbero aparece con `bookings: []`. | `test_agenda_lists_barbers_without_bookings` |
+| **AC-22** | RF-13 | **Dado** que no se envía `date`, **cuando** el admin pide la agenda, **entonces** se usa la fecha de hoy en America/Panama. | `test_agenda_defaults_to_today` |
 
 ⭐ = criterios de la regla **obligatoria** de no doble reserva (O1).
 

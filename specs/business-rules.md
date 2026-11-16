@@ -51,3 +51,6 @@ CONFIRMADA ──(cliente cancela ≥ 2h antes)──► CANCELADA
 | ¿Qué ocurre al cancelar una reserva ya `CANCELADA`? | Se rechaza con 409 `ALREADY_CANCELLED` (D-T8-1). |
 | ¿El código de reserva distingue mayúsculas y minúsculas? | No; se normaliza a mayúsculas antes de buscar (D-T8-2). |
 | ¿Se puede cancelar exactamente 2 horas antes del inicio? | Sí; se permite cuando `start_at - now >= 2 h`. Con 1 h 59 min se rechaza con `CANCEL_WINDOW_CLOSED` (D-T8-3). |
+| ¿Los barberos activos sin citas aparecen en la agenda? | Sí; todos los barberos activos aparecen, aunque tengan `bookings: []` (D-T9-1). |
+| ¿Un barbero inactivo aparece en la agenda? | Solo si tiene reservas `CONFIRMADA` en la fecha consultada (D-T9-2). |
+| ¿Qué fecha usa la agenda si no se envía `date`? | La fecha de hoy en America/Panama (D-T9-3). |
