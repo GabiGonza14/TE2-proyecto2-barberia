@@ -18,3 +18,12 @@ class BookingOut(BaseModel):
     service: str
     start_at: datetime
     end_at: datetime
+
+
+class CancelRequest(BaseModel):
+    phone: str
+
+
+class CancelOut(BaseModel):
+    code: str
+    status: str

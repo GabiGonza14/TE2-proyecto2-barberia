@@ -247,3 +247,31 @@ def test_cancel_missing_phone(engine: Engine) -> None:
 
     assert response.status_code == 422
     assert error_code(response) == "VALIDATION_ERROR"
+
+
+def test_concurrent_cancel_only_one_succeeds(engine: Engine) -> None:
+    """Dos cancelaciones a la vez (SELECT … FOR UPDATE): 1×200 y 1×409."""
+    import threading
+
+    created = book(engine)
+    barrier = threading.Barrier(2, timeout=10)
+    results: list[tuple[int, str | None]] = []
+    lock = threading.Lock()
+
+    def worker() -> None:
+        barrier.wait()
+        response = cancel(created["code"])
+        code = None if response.status_code == 200 else error_code(response)
+        with lock:
+            results.append((response.status_code, code))
+
+    threads = [threading.Thread(target=worker) for _ in range(2)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(timeout=30)
+
+    assert sorted(results, key=lambda r: r[0]) == [
+        (200, None),
+        (409, "ALREADY_CANCELLED"),
+    ]

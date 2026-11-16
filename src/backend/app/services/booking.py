@@ -1,3 +1,4 @@
+import secrets
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -11,7 +12,9 @@ from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.orm import Session
 
 from app.core.errors import (
+    ALREADY_CANCELLED,
     BARBER_INACTIVE,
+    CANCEL_WINDOW_CLOSED,
     INVALID_START_TIME,
     NOT_FOUND,
     OUTSIDE_BUSINESS_HOURS,
@@ -22,13 +25,16 @@ from app.core.errors import (
     DomainError,
 )
 from app.domain import rules
-from app.models.booking import STATUS_CONFIRMED
+from app.models.booking import STATUS_CANCELLED, STATUS_CONFIRMED, Booking
 from app.repositories import bookings as bookings_repository
 from app.repositories.catalog import get_barber, get_service
-from app.schemas.bookings import BookingCreate, BookingOut
+from app.schemas.bookings import BookingCreate, BookingOut, CancelOut
 
 MAX_CODE_ATTEMPTS = 5
 SLOT_TAKEN_MESSAGE = "El barbero ya tiene una cita en ese horario"
+# BR-10: el mismo mensaje si el código no existe o el teléfono no coincide,
+# para no revelar qué códigos existen.
+BOOKING_NOT_FOUND_MESSAGE = "No encontramos una reserva con ese código y teléfono"
 
 # Dos INSERT simultáneos que chocan en no_double_booking pueden terminar en
 # deadlock (cada uno espera al otro) en lugar de ExclusionViolation.
@@ -186,3 +192,66 @@ def create_booking(
         start_at=validated.start,
         end_at=validated.end,
     )
+
+
+
+# ------------------------------------------------- T8 · consultar y cancelar
+def _phone_param(phone: str) -> str:
+    """BR-09 sobre el parámetro `phone` (consultar / cancelar)."""
+    try:
+        return rules.normalize_phone(phone)
+    except DomainError as exc:
+        raise DomainError(exc.code, exc.message, field="phone") from exc
+
+
+def _find_owned_booking(
+    db: Session, code: str, phone: str, *, for_update: bool = False
+) -> Booking:
+    """BR-10 · código (sin distinguir mayúsculas) + teléfono. Si el código no
+    existe o el teléfono no coincide → el mismo 404."""
+    normalized_phone = _phone_param(phone)
+    booking = bookings_repository.get_by_code(
+        db, rules.normalize_booking_code(code), for_update=for_update
+    )
+    if booking is None or not secrets.compare_digest(
+        booking.client_phone, normalized_phone
+    ):
+        raise DomainError(NOT_FOUND, BOOKING_NOT_FOUND_MESSAGE)
+    return booking
+
+
+def _to_out(booking: Booking) -> BookingOut:
+    return BookingOut(
+        code=booking.code,
+        status=booking.status,
+        barber=booking.barber.name,
+        service=booking.service.name,
+        start_at=booking.start_at.astimezone(rules.TZ),
+        end_at=booking.end_at.astimezone(rules.TZ),
+    )
+
+
+def get_booking(db: Session, code: str, phone: str) -> BookingOut:
+    """RF-10 · consultar una reserva con código + teléfono."""
+    return _to_out(_find_owned_booking(db, code, phone))
+
+
+def cancel_booking(db: Session, code: str, phone: str, now: datetime) -> CancelOut:
+    """RF-11/RF-12 · cancelar con 2 h o más de anticipación (BR-06). La
+    reserva CANCELADA deja de contar para no_double_booking (BR-07)."""
+    try:
+        booking = _find_owned_booking(db, code, phone, for_update=True)
+        if booking.status == STATUS_CANCELLED:
+            raise DomainError(ALREADY_CANCELLED, "La reserva ya estaba cancelada")
+        if not rules.can_cancel(booking.start_at, now):
+            raise DomainError(
+                CANCEL_WINDOW_CLOSED,
+                "Solo se puede cancelar con 2 horas o más de anticipación",
+            )
+        booking.status = STATUS_CANCELLED
+        booking.cancelled_at = now
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    return CancelOut(code=booking.code, status=booking.status)

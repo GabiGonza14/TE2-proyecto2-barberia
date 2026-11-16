@@ -21,6 +21,9 @@ SLOT_MINUTES = 15
 # BR-05 · anticipación máxima
 MAX_DAYS_AHEAD = 14
 
+# BR-06 · se puede cancelar con 2 h o más de anticipación (D8: 2 h exactas sí)
+CANCEL_MIN_NOTICE = timedelta(hours=2)
+
 # BR-09 · datos del cliente
 # Se usa [0-9] y no \d a propósito: en Python \d acepta dígitos Unicode (p. ej. "٦١٢٣").
 _PHONE_RE = re.compile(r"^6[0-9]{3}-?[0-9]{4}$")
@@ -114,3 +117,13 @@ def validate_name(name: str) -> str:
 def generate_booking_code() -> str:
     """BR-10 · código criptográficamente aleatorio de 6 caracteres."""
     return "".join(secrets.choice(BOOKING_CODE_ALPHABET) for _ in range(6))
+
+
+def can_cancel(start: datetime, now: datetime) -> bool:
+    """BR-06 · True si faltan 2 horas o más para el inicio (2 h exactas: sí)."""
+    return _local(start) - _local(now) >= CANCEL_MIN_NOTICE
+
+
+def normalize_booking_code(code: str) -> str:
+    """BR-10 · el código no distingue mayúsculas: se normaliza a mayúsculas."""
+    return (code or "").strip().upper()
