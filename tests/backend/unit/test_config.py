@@ -23,3 +23,10 @@ def test_cors_origins_rejects_wildcard(monkeypatch: pytest.MonkeyPatch) -> None:
 
     with pytest.raises(ValueError, match="CORS_ORIGINS"):
         cors_origins()
+
+
+def test_cors_origins_strip_trailing_slash(monkeypatch: pytest.MonkeyPatch) -> None:
+    """El navegador envía el Origin sin '/' final: con '/' no coincidiría y bloquearía sin error claro."""
+    monkeypatch.setenv("CORS_ORIGINS", "http://localhost:5173/, https://barberbook.example/")
+
+    assert cors_origins() == ["http://localhost:5173", "https://barberbook.example"]
