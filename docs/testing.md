@@ -31,8 +31,8 @@ Ejecutar: `docker compose up -d db && pytest -v`
 | AC-08 | BR-04 | test_start_not_on_grid | ⏳ |
 | AC-09 | BR-05 | test_booking_window | ⏳ |
 | AC-10 | BR-09 | test_client_validation | ⏳ |
-| AC-11 | RF-03 | test_availability_excludes_taken | ⏳ |
-| AC-12 | RF-04 | test_availability_closed_day | ⏳ |
+| AC-11 | RF-03 | test_availability_excludes_taken | ✅ PASS |
+| AC-12 | RF-04 | test_availability_closed_day | ✅ PASS |
 | AC-13 | RF-11 / BR-07 | test_cancel_frees_slot | ⏳ |
 | AC-14 | RF-12 / BR-06 | test_cancel_window_closed | ⏳ |
 | AC-15 | RF-10 | test_lookup_requires_phone | ⏳ |
