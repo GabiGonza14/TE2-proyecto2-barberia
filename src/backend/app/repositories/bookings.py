@@ -27,16 +27,17 @@ def confirmed_bookings_for_day(
 
 
 def find_overlapping(
-    db: Session, barber_id: int, start: datetime, end: datetime
+    db: Session, barber_id: int, start: datetime, blocked_end: datetime
 ) -> list[Booking]:
+    """BR-12: compara el bloqueo completo (cita + limpieza) de ambas reservas."""
     return list(
         db.scalars(
             select(Booking)
             .where(
                 Booking.barber_id == barber_id,
                 Booking.status == STATUS_CONFIRMED,
-                Booking.start_at < end,
-                Booking.end_at > start,
+                Booking.start_at < blocked_end,
+                Booking.blocked_until > start,
             )
             .order_by(Booking.start_at)
         )

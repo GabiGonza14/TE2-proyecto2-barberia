@@ -112,7 +112,7 @@ def _validate_booking(
         )
 
     if bookings_repository.find_overlapping(
-        db, data.barber_id, start, end
+        db, data.barber_id, start, rules.blocked_until(end)
     ):
         raise DomainError(
             SLOT_TAKEN, SLOT_TAKEN_MESSAGE

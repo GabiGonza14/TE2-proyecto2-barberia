@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import httpx
 import pytest
@@ -58,10 +58,10 @@ def insert_booking(
                 """
                 INSERT INTO bookings (
                     code, barber_id, service_id, client_name, client_phone,
-                    start_at, end_at, status
+                    start_at, end_at, blocked_until, status
                 ) VALUES (
                     :code, :barber_id, :service_id, 'Cliente Prueba',
-                    '60000000', :start_at, :end_at, :status
+                    '60000000', :start_at, :end_at, :blocked_until, :status
                 )
                 """
             ),
@@ -71,6 +71,7 @@ def insert_booking(
                 "service_id": service_id,
                 "start_at": start_at,
                 "end_at": end_at,
+                "blocked_until": end_at + timedelta(minutes=10),
                 "status": status,
             },
         )

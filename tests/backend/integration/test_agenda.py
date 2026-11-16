@@ -69,8 +69,9 @@ def insert(
         conn.execute(
             text(
                 "INSERT INTO bookings (code, barber_id, service_id, client_name,"
-                " client_phone, start_at, end_at, status) VALUES (:code, :b, :s,"
-                " :client, '61234567', :start, :end, :status)"
+                " client_phone, start_at, end_at, blocked_until, status) VALUES"
+                " (:code, :b, :s, :client, '61234567', :start, :end,"
+                " :blocked_until, :status)"
             ),
             {
                 "code": code,
@@ -79,6 +80,7 @@ def insert(
                 "client": client,
                 "start": start,
                 "end": start + timedelta(minutes=minutes),
+                "blocked_until": start + timedelta(minutes=minutes + 10),
                 "status": status,
             },
         )

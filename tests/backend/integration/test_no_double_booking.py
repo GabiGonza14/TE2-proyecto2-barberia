@@ -10,11 +10,11 @@ INSERT_BOOKING = text(
     """
     INSERT INTO bookings (
         code, barber_id, service_id, client_name, client_phone,
-        start_at, end_at, status
+        start_at, end_at, blocked_until, status
     )
     VALUES (
         :code, :barber_id, :service_id, :client_name, :client_phone,
-        :start_at, :end_at, :status
+        :start_at, :end_at, :blocked_until, :status
     )
     """
 )
@@ -42,6 +42,7 @@ def insert_booking(
     start_at: datetime,
     end_at: datetime,
     status: str = "CONFIRMADA",
+    blocked_until: datetime | None = None,
 ) -> None:
     with engine.begin() as conn:
         conn.execute(
@@ -54,6 +55,11 @@ def insert_booking(
                 "client_phone": "60000000",
                 "start_at": start_at,
                 "end_at": end_at,
+                "blocked_until": (
+                    blocked_until
+                    if blocked_until is not None
+                    else end_at + timedelta(minutes=10)
+                ),
                 "status": status,
             },
         )

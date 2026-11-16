@@ -16,6 +16,7 @@ from app.domain.rules import (
     OPENING_TIME,
     SLOT_MINUTES,
     TZ,
+    blocked_until,
     check_booking_window,
     compute_end,
     is_open_day,
@@ -79,13 +80,18 @@ def get_availability(
     start = datetime.combine(day, OPENING_TIME, TZ)
     while True:
         end = compute_end(start, duration_min)
+        # BR-02: la cita (no la limpieza) debe caber antes del cierre.
         if not is_within_business_hours(start, end):
             break
         if day == today and check_booking_window(start, now) is not None:
             start += timedelta(minutes=SLOT_MINUTES)
             continue
+        # BR-12: se compara el bloqueo completo (cita + limpieza).
+        blocked_end = blocked_until(end)
         if not any(
-            overlaps(start, end, booking.start_at, booking.end_at)
+            overlaps(
+                start, blocked_end, booking.start_at, booking.blocked_until
+            )
             for booking in bookings
         ):
             slots.append(start.strftime("%H:%M"))
