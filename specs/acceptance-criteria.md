@@ -22,6 +22,9 @@
 | **AC-15** | RF-10 · BR-10 | **Cuando** consulto con código correcto y teléfono incorrecto, **entonces** 404. | `test_lookup_requires_phone` |
 | **AC-16** | RF-13 | **Dado** 3 reservas del día, **cuando** el admin pide la agenda, **entonces** salen ordenadas por hora y agrupadas por barbero, sin las canceladas. | `test_agenda_of_day` |
 | **AC-17** | RF-14 | **Cuando** pido la agenda sin `X-Admin-Key`, **entonces** 401. | `test_agenda_requires_admin` |
+| **AC-18** | RF-11 · BR-06 | **Dado** que faltan exactamente 2 horas para la cita, **cuando** la cancelo, **entonces** responde 200 y queda `CANCELADA`. | `test_cancel_exactly_two_hours_before` |
+| **AC-19** | RF-11 | **Dado** una reserva ya `CANCELADA`, **cuando** intento cancelarla de nuevo, **entonces** responde 409 `ALREADY_CANCELLED`. | `test_cancel_already_cancelled` |
+| **AC-20** | BR-10 | **Dado** un código de reserva en mayúsculas, **cuando** consulto con el código en minúsculas y el teléfono correcto, **entonces** responde 200. | `test_lookup_code_case_insensitive` |
 
 ⭐ = criterios de la regla **obligatoria** de no doble reserva (O1).
 

@@ -59,12 +59,14 @@ Día cerrado / fuera de ventana → `"slots": [], "reason": "CLOSED" | "PAST_DAT
 **Errores:** 409 `SLOT_TAKEN` · 422 `OUTSIDE_BUSINESS_HOURS` · `INVALID_START_TIME` · `PAST_DATE` · `TOO_FAR_AHEAD` · `VALIDATION_ERROR` · `BARBER_INACTIVE`
 
 ## GET /bookings/{code}?phone=61234567
-**200** misma forma que el 201 · **404** `NOT_FOUND` si código o teléfono no coinciden.
+El código no distingue mayúsculas y minúsculas: se normaliza a mayúsculas antes de buscar.
+
+**200** misma forma que el 201 · **404** `NOT_FOUND` con el mismo mensaje genérico si el código no existe o el teléfono no coincide, para no revelar qué códigos existen.
 
 ## POST /bookings/{code}/cancel
 **Request** `{ "phone": "61234567" }`
 **200** `{ "code": "K7P2QX", "status": "CANCELADA" }`
-**Errores:** 404 `NOT_FOUND` · 409 `CANCEL_WINDOW_CLOSED`
+**Errores:** 404 `NOT_FOUND` · 409 `CANCEL_WINDOW_CLOSED` · 409 `ALREADY_CANCELLED`
 
 ## GET /admin/agenda?date=2026-12-01
 Header `X-Admin-Key: <clave>` · **401** sin clave.
