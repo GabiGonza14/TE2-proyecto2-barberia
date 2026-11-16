@@ -24,8 +24,10 @@ function resolveTestsFromFrontend(): Plugin {
 export default defineConfig({
   plugins: [react(), resolveTestsFromFrontend()],
   server: {
-    // Permite que vitest cargue tests/frontend/.
-    fs: { allow: ["../.."] },
+    // Solo vitest necesita leer tests/frontend/. El servidor de desarrollo se queda
+    // con la restricción por defecto: si no, /@fs/ expone archivos (en Docker, todo
+    // el contenedor, p. ej. /@fs/etc/passwd).
+    fs: process.env.VITEST ? { allow: [".", "../../tests/frontend"] } : undefined,
     // Docker en Windows/macOS no propaga eventos de archivos al contenedor:
     // con VITE_USE_POLLING=true Vite revisa los cambios por sondeo (hot reload).
     watch: process.env.VITE_USE_POLLING === "true" ? { usePolling: true, interval: 300 } : undefined,

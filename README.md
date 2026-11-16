@@ -29,7 +29,7 @@ docker compose up --build        # api :8000 · web :5173
 docker compose exec api pytest -v
 ```
 
-- **Hot reload:** el código de `src/backend` y `src/frontend` se monta en los contenedores; los cambios se ven sin `--build` (solo hace falta reconstruir si cambian dependencias: `pyproject.toml` o `package.json`).
+- **Hot reload:** el código de `src/backend` y `src/frontend` se monta en los contenedores; los cambios se ven sin `--build`. Si cambian dependencias (`pyproject.toml` o `package.json`) usa `docker compose up --build -V`: el `-V` recrea el volumen de `node_modules`, que si no se reutiliza con los paquetes viejos.
 - **CORS:** la API solo acepta el origen del frontend (`http://localhost:5173`). Para otro origen, define `CORS_ORIGINS` en `.env` (separados por comas; `*` no se permite).
 - **Frontend:** `cd src/frontend && npm test` (vitest; los tests están en `tests/frontend/`) · `npm run coverage` para ver la cobertura.
 - **Cobertura backend:** `pytest --cov --cov-report=term`.
