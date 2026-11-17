@@ -9,6 +9,7 @@ import {
 } from "../api/client";
 import { bookableDates } from "../api/dates";
 import type { Availability, Barber, Booking, Service } from "../api/types";
+import { PHONE_RE } from "../api/validation";
 import BarberStep from "../components/BarberStep";
 import BookingTicket from "../components/BookingTicket";
 import Confirmation from "../components/Confirmation";
@@ -18,9 +19,6 @@ import StepIndicator from "../components/StepIndicator";
 import TimeStep from "../components/TimeStep";
 
 type Step = 1 | 2 | 3 | 4;
-
-// BR-09: mismo patrón que el backend (6XXX-XXXX, guion opcional).
-const PHONE_RE = /^6[0-9]{3}-?[0-9]{4}$/;
 
 function errorMessage(error: unknown): string {
   if (error instanceof ApiError) return error.message;
@@ -185,12 +183,6 @@ export default function BookingPage() {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <header className="brand">
-          <span className="brand__pole pole" aria-hidden="true" />
-          <h1 className="brand__name">BarberBook</h1>
-          <p className="brand__tagline">Cortes con hora. Sin esperas.</p>
-        </header>
-
         <BookingTicket
           service={service}
           barber={barber}

@@ -33,8 +33,52 @@ const barbers = [
   { id: 3, name: "Andrés" },
 ];
 
-/** Reservas confirmadas en memoria: clave barber_id|start_at. */
+/** Reservas confirmadas en memoria: clave barber_id|start_at → código. */
 const taken = new Map();
+/** Reservas en memoria por código: incluye el teléfono (solo para la demo). */
+const bookings = new Map();
+
+const ADMIN_KEY = process.env.MOCK_ADMIN_KEY ?? "clave-demo";
+
+function normalizePhone(phone) {
+  return String(phone ?? "").replace(/[\s-]/g, "");
+}
+
+function publicBooking(booking) {
+  return {
+    code: booking.code,
+    status: booking.status,
+    barber: barbers.find((b) => b.id === booking.barberId)?.name ?? "",
+    service: services.find((s) => s.id === booking.serviceId)?.name ?? "",
+    start_at: booking.start_at,
+    end_at: booking.end_at,
+  };
+}
+
+function seedBooking(code, barberId, serviceId, time, clientName, phone) {
+  const service = services.find((s) => s.id === serviceId);
+  const date = panamaToday();
+  const start_at = `${date}T${time}:00-05:00`;
+  const end_at = `${date}T${minutesToTime(
+    timeToMinutes(time) + service.duration_min,
+  )}:00-05:00`;
+  bookings.set(code, {
+    code,
+    status: "CONFIRMADA",
+    phone: normalizePhone(phone),
+    clientName,
+    barberId,
+    serviceId,
+    start_at,
+    end_at,
+  });
+  taken.set(`${barberId}|${date}T${time}`, code);
+}
+
+// Datos de demo para que la agenda y "Mi reserva" tengan contenido al abrir.
+// Reinicia el proceso para volver a este estado inicial.
+seedBooking("K7P2QX", 1, 1, "10:00", "Ana Pérez", "6123-4567");
+seedBooking("M3RT8V", 2, 2, "11:30", "Marco Díaz", "6987-1234");
 
 function panamaToday() {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -232,6 +276,16 @@ const server = createServer(async (req, res) => {
       "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[Math.floor(Math.random() * 32)],
     ).join("");
     taken.set(key, code);
+    bookings.set(code, {
+      code,
+      status: "CONFIRMADA",
+      phone: normalizePhone(phone),
+      clientName: name,
+      barberId: barber.id,
+      serviceId: service.id,
+      start_at: start,
+      end_at: `${date}T${minutesToTime(endMinute)}:00-05:00`,
+    });
 
     return json(res, 201, {
       code,
@@ -243,22 +297,123 @@ const server = createServer(async (req, res) => {
     });
   }
 
-  if (pathname === "/__frame") {
-    // Solo para capturas: iframe con viewport propio (móvil / escritorio ancho).
-    const width = Number(searchParams.get("w") ?? 390);
-    const height = Number(searchParams.get("h") ?? 844);
-    const scale = Number(searchParams.get("scale") ?? 1);
-    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-    res.end(`<!doctype html>
-<html lang="es"><head><meta charset="utf-8" /><style>
-  html, body { margin: 0; padding: 0; background: #f4f1ec; }
-  #frame { width: ${width * scale}px; height: ${height * scale}px; overflow: hidden;
-    margin: 20px auto; outline: 1px solid #ddd7ce; }
-  iframe { display: block; width: ${width}px; height: ${height}px; border: 0;
-    transform: scale(${scale}); transform-origin: top left; }
-</style></head>
-<body><div id="frame"><iframe id="app" src="/" title="BarberBook"></iframe></div></body></html>`);
-    return;
+  const bookingMatch = pathname.match(
+    new RegExp(`^${API}/bookings/([^/]+)$`),
+  );
+  if (bookingMatch && req.method === "GET") {
+    const code = decodeURIComponent(bookingMatch[1]).toUpperCase();
+    const phone = normalizePhone(searchParams.get("phone"));
+    const booking = bookings.get(code);
+    if (!booking || booking.phone !== phone) {
+      return apiError(
+        res,
+        404,
+        "NOT_FOUND",
+        "No encontramos una reserva con esos datos",
+      );
+    }
+    return json(res, 200, publicBooking(booking));
+  }
+
+  const cancelMatch = pathname.match(
+    new RegExp(`^${API}/bookings/([^/]+)/cancel$`),
+  );
+  if (cancelMatch && req.method === "POST") {
+    let body;
+    try {
+      body = await readBody(req);
+    } catch {
+      return apiError(res, 400, "BAD_REQUEST", "JSON inválido");
+    }
+
+    const code = decodeURIComponent(cancelMatch[1]).toUpperCase();
+    const phone = normalizePhone(body.phone);
+    const booking = bookings.get(code);
+    if (!booking || booking.phone !== phone) {
+      return apiError(
+        res,
+        404,
+        "NOT_FOUND",
+        "No encontramos una reserva con esos datos",
+      );
+    }
+    if (booking.status === "CANCELADA") {
+      return apiError(
+        res,
+        409,
+        "ALREADY_CANCELLED",
+        "Esta reserva ya estaba cancelada",
+      );
+    }
+
+    // BR-06: se puede cancelar con 2 h o más de antelación.
+    const startMs = new Date(booking.start_at).getTime();
+    if (startMs - Date.now() < 2 * 60 * 60 * 1000) {
+      return apiError(
+        res,
+        409,
+        "CANCEL_WINDOW_CLOSED",
+        "Ya no se puede cancelar: faltan menos de 2 horas para tu cita",
+      );
+    }
+
+    booking.status = "CANCELADA";
+    // BR-07: al cancelar, el horario vuelve a estar disponible.
+    taken.delete(
+      `${booking.barberId}|${booking.start_at.slice(0, 10)}T${booking.start_at.slice(11, 16)}`,
+    );
+    return json(res, 200, { code: booking.code, status: booking.status });
+  }
+
+  if (pathname === `${API}/admin/agenda` && req.method === "GET") {
+    if (req.headers["x-admin-key"] !== ADMIN_KEY) {
+      res.setHeader("WWW-Authenticate", 'X-Admin-Key realm="admin"');
+      return apiError(
+        res,
+        401,
+        "UNAUTHORIZED",
+        "Clave de administrador inválida",
+      );
+    }
+
+    const date = searchParams.get("date") || panamaToday();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return apiError(res, 422, "VALIDATION_ERROR", "Fecha inválida", {
+        field: "date",
+      });
+    }
+
+    const barberFilter = searchParams.get("barber_id");
+    let selected = barbers;
+    if (barberFilter) {
+      const barber = barbers.find((b) => b.id === Number(barberFilter));
+      if (!barber) {
+        return apiError(res, 404, "NOT_FOUND", "Barbero no encontrado");
+      }
+      selected = [barber];
+    }
+
+    return json(res, 200, {
+      date,
+      barbers: selected.map((barber) => ({
+        barber: barber.name,
+        bookings: [...bookings.values()]
+          .filter(
+            (booking) =>
+              booking.barberId === barber.id &&
+              booking.status === "CONFIRMADA" &&
+              booking.start_at.slice(0, 10) === date,
+          )
+          .sort((a, b) => a.start_at.localeCompare(b.start_at))
+          .map((booking) => ({
+            start: booking.start_at.slice(11, 16),
+            end: booking.end_at.slice(11, 16),
+            service: services.find((s) => s.id === booking.serviceId)?.name,
+            client: booking.clientName,
+            code: booking.code,
+          })),
+      })),
+    });
   }
 
   if (pathname.startsWith(API)) {
