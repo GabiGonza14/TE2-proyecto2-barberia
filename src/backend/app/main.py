@@ -18,6 +18,7 @@ from app.core.errors import (
     VALIDATION_ERROR,
     DomainError,
 )
+from app.core.logging import install_log_filters
 from app.routers.admin import router as admin_router
 from app.routers.availability import router as availability_router
 from app.routers.bookings import router as bookings_router
@@ -39,6 +40,9 @@ ERROR_STATUS = {
 
 # RFC 9110: el 401 debe indicar el esquema de autenticación (RF-14).
 ERROR_HEADERS = {UNAUTHORIZED: {"WWW-Authenticate": 'X-Admin-Key realm="admin"'}}
+
+# RNF-06: el access log de uvicorn no debe mostrar el teléfono completo.
+install_log_filters()
 
 app = FastAPI(title="BarberBook API")
 # architecture.md §5: CORS limitado al origen del frontend (CORS_ORIGINS).
