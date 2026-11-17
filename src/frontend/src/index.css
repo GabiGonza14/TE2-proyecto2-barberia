@@ -204,6 +204,10 @@ h3 {
   font-variant-numeric: tabular-nums;
 }
 
+.ticket--confirm .button--small {
+  margin-bottom: 1.75rem;
+}
+
 .ticket__note {
   margin: 1.5rem 0 0;
   padding-top: 1rem;
@@ -545,6 +549,8 @@ h2 {
 @media (max-width: 900px) {
   .app-shell {
     grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    align-content: start;
   }
 
   .sidebar {
