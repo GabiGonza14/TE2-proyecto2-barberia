@@ -30,10 +30,9 @@ cp .env.example .env             # edita ADMIN_KEY con una clave larga y aleator
 
 # 2. Levantar base de datos, API y frontend
 docker compose up --build -d
-
-# 3. Crear las tablas y los datos iniciales (barberos y servicios)
-docker compose exec api sh -c "cd src/backend && alembic upgrade head"
 ```
+
+Al arrancar, la API aplica sola las migraciones (tablas + barberos y servicios iniciales).
 
 Abre **http://localhost:5173** (frontend) · API en **http://localhost:8000** (docs en `/docs`).
 Para la pestaña **Agenda** usa la `ADMIN_KEY` de tu `.env`.
@@ -41,9 +40,9 @@ Para la pestaña **Agenda** usa la `ADMIN_KEY` de tu `.env`.
 | Situación | Qué hacer |
 |-----------|-----------|
 | `docker compose` dice que falta `ADMIN_KEY` | Es a propósito: no arranca con una clave pública. Créala en `.env` (paso 1). |
-| La app carga pero no muestra servicios/barberos | Faltan las tablas: ejecuta el paso 3. |
+| La app carga pero no muestra servicios/barberos | Revisa `docker compose logs api`: si una migración falló, la API no arranca. |
 | Cambiaron dependencias (`pyproject.toml` o `package.json`) | `docker compose up --build -d -V` (el `-V` recrea el volumen de `node_modules`). |
-| `alembic upgrade head` falla por `no_double_booking` | Hay citas pegadas guardadas de antes de CR-01: `docker compose down -v` (borra los datos) y repite los pasos 2 y 3. |
+| En `docker compose logs api` la migración falla por `no_double_booking` | Hay citas pegadas guardadas de antes de CR-01: `docker compose down -v` (borra los datos) y repite el paso 2. |
 | Apagar todo | `docker compose down` (conserva los datos) · `docker compose down -v` (los borra) |
 
 - **Hot reload:** el código de `src/backend` y `src/frontend` está montado en los contenedores; los cambios se ven sin reconstruir.
