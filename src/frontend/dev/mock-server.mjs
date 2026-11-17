@@ -418,11 +418,27 @@ const server = createServer(async (req, res) => {
 
   if (pathname === "/__frame") {
     // Solo para capturas: iframe con viewport propio (móvil / escritorio ancho).
-    const width = Number(searchParams.get("w") ?? 390);
-    const height = Number(searchParams.get("h") ?? 844);
-    const scale = Number(searchParams.get("scale") ?? 1);
-    const hash = (searchParams.get("hash") ?? "").replace(/^#?\/?/, "");
-    const src = hash ? `/#/${hash}` : "/";
+    // Los parámetros se normalizan y `hash` se limita a las rutas conocidas para
+    // que nada del query string llegue sin validar al HTML (XSS).
+    const FRAME_ROUTES = new Set(["", "reservar", "mi-reserva", "agenda"]);
+    const numberParam = (value, fallback, min, max) => {
+      const parsed = Number(value);
+      return value !== null &&
+        Number.isFinite(parsed) &&
+        parsed >= min &&
+        parsed <= max
+        ? parsed
+        : fallback;
+    };
+
+    const width = numberParam(searchParams.get("w"), 390, 100, 2000);
+    const height = numberParam(searchParams.get("h"), 844, 200, 4000);
+    const scale = numberParam(searchParams.get("scale"), 1, 0.1, 3);
+    const requested = (searchParams.get("hash") ?? "")
+      .replace(/^#?\/?/, "")
+      .replace(/\/+$/, "");
+    const route = FRAME_ROUTES.has(requested) ? requested : "";
+    const src = route ? `/#/${route}` : "/";
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
     res.end(`<!doctype html>
 <html lang="es"><head><meta charset="utf-8" /><style>
