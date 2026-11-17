@@ -63,7 +63,7 @@ cd src/frontend && npm install && npm test        # npm run coverage para la cob
 
 | Indicador | Resultado |
 |-----------|-----------|
-| Backend | **157 tests** (unitarios, integración y concurrencia con PostgreSQL real) · cobertura **99 %** |
+| Backend | **166 tests** (unitarios, integración y concurrencia con PostgreSQL real) · cobertura **99 %** |
 | Frontend | **12 tests** (reservar, consultar/cancelar, agenda) |
 | Criterios de aceptación | **AC-01…AC-25: 25/25 ✅** → [matriz](docs/testing.md#matriz-de-evidencia-verify--converge) |
 | CI | GitHub Actions: `backend-tests`, `frontend`, SonarCloud (Quality Gate) |

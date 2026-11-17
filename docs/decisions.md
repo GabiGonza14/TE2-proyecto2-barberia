@@ -32,7 +32,7 @@ Se recorrieron las specs contra el código y la evidencia. Diferencias encontrad
 | # | Spec | Hallazgo | Acción |
 |---|------|----------|--------|
 | C1 | RNF-04 (disponibilidad < 300 ms con ≈ 500 reservas) | No tenía evidencia | **Medido** en T12: p95 = 5 ms con 520 reservas → ✅ (`docs/testing.md`, RNF) |
-| C2 | RNF-06 (sin teléfonos en logs) | El *access log* de uvicorn imprime `GET /bookings/{code}?phone=…` con el teléfono completo | **Corregir el código** en un PR aparte: filtro que enmascare `phone` en `uvicorn.access`, con test |
+| C2 | RNF-06 (sin teléfonos en logs) | El *access log* de uvicorn imprime `GET /bookings/{code}?phone=…` con el teléfono completo | **Código corregido** en PR #32: `PhoneMaskingFilter` en `uvicorn.access` deja `phone=***4567` (TDD, 9 tests) ✅ |
 | C3 | architecture.md (levantar con `docker compose up`) | `docker compose up` no aplica las migraciones: sin `alembic upgrade head` la API arranca sin tablas | Documentado en el README (paso 3). Mejora opcional: que el contenedor `api` ejecute la migración al arrancar |
 | C4 | Pruebas en Docker | `pytest` vacía la tabla `bookings` de la BD a la que apunta; dentro del contenedor esa es la BD de la demo | Documentado en el README: usar `barberbook_test` |
 | C5 | AC-01…AC-25 | Los 25 tests de la matriz existen y pasan en CI | Sin diferencias ✅ |
