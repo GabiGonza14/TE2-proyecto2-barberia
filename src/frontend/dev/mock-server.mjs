@@ -416,42 +416,6 @@ const server = createServer(async (req, res) => {
     });
   }
 
-  if (pathname === "/__frame") {
-    // Solo para capturas: iframe con viewport propio (móvil / escritorio ancho).
-    // Los parámetros se normalizan y `hash` se limita a las rutas conocidas para
-    // que nada del query string llegue sin validar al HTML (XSS).
-    const FRAME_ROUTES = new Set(["", "reservar", "mi-reserva", "agenda"]);
-    const numberParam = (value, fallback, min, max) => {
-      const parsed = Number(value);
-      return value !== null &&
-        Number.isFinite(parsed) &&
-        parsed >= min &&
-        parsed <= max
-        ? parsed
-        : fallback;
-    };
-
-    const width = numberParam(searchParams.get("w"), 390, 100, 2000);
-    const height = numberParam(searchParams.get("h"), 844, 200, 4000);
-    const scale = numberParam(searchParams.get("scale"), 1, 0.1, 3);
-    const requested = (searchParams.get("hash") ?? "")
-      .replace(/^#?\/?/, "")
-      .replace(/\/+$/, "");
-    const route = FRAME_ROUTES.has(requested) ? requested : "";
-    const src = route ? `/#/${route}` : "/";
-    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-    res.end(`<!doctype html>
-<html lang="es"><head><meta charset="utf-8" /><style>
-  html, body { margin: 0; padding: 0; background: #f4f1ec; }
-  #frame { width: ${width * scale}px; height: ${height * scale}px; overflow: hidden;
-    margin: 20px auto; outline: 1px solid #ddd7ce; }
-  iframe { display: block; width: ${width}px; height: ${height}px; border: 0;
-    transform: scale(${scale}); transform-origin: top left; }
-</style></head>
-<body><div id="frame"><iframe id="app" src="${src}" title="BarberBook"></iframe></div></body></html>`);
-    return;
-  }
-
   if (pathname.startsWith(API)) {
     return apiError(res, 404, "NOT_FOUND", "Recurso no encontrado");
   }
