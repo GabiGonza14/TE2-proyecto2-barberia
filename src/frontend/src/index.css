@@ -9,6 +9,7 @@
     sans-serif;
   --font-body: "Manrope Variable", "Manrope", sans-serif;
   --radius: 14px;
+  --topbar-h: 72px;
 
   color: var(--ink);
   background: var(--paper);
@@ -51,20 +52,33 @@ h3 {
 }
 
 /* --------------------------------------------------------------- Layout */
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app__route {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
 .app-shell {
   display: grid;
+  flex: 1;
   grid-template-columns: 380px minmax(0, 1fr);
-  min-height: 100vh;
+  min-height: calc(100vh - var(--topbar-h));
 }
 
 .sidebar {
   position: sticky;
-  top: 0;
+  top: var(--topbar-h);
   align-self: start;
   display: flex;
   flex-direction: column;
   gap: 2rem;
-  height: 100vh;
+  height: calc(100vh - var(--topbar-h));
   padding: 2.5rem;
   border-right: 1px solid var(--line);
   background: var(--paper);
@@ -86,6 +100,78 @@ h3 {
   color: var(--muted);
   font-size: 0.78rem;
   font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------------------- Navegación */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.topbar__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  max-width: 1400px;
+  margin-inline: auto;
+  padding: 0.7rem clamp(1rem, 4vw, 2.5rem);
+}
+
+.topbar__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.topbar .brand__pole {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 8px;
+  margin: 0;
+}
+
+.topbar .brand__name {
+  font-size: 1.15rem;
+  white-space: nowrap;
+}
+
+.topbar .brand__tagline {
+  margin: 0;
+  border-left: 1px solid var(--line);
+  padding-left: 0.75rem;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.nav {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.nav__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0.5rem 0.9rem;
+  border-bottom: 3px solid transparent;
+  color: var(--ink);
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: border-color 150ms, background 150ms;
+}
+
+.nav__link:hover {
+  border-bottom-color: var(--line);
+}
+
+.nav__link[aria-current="page"] {
+  border-bottom-color: var(--accent);
 }
 
 /* --------------------------------------------------------------- Marca */
@@ -545,6 +631,224 @@ h2 {
   color: var(--ink);
 }
 
+/* --------------------------------------------------------------- Páginas T11 */
+.page {
+  flex: 1;
+  padding: 2.5rem clamp(1.25rem, 5vw, 4rem) 4rem;
+}
+
+.page--wide .page__inner {
+  max-width: 1080px;
+}
+
+.page__inner {
+  display: grid;
+  gap: 1.25rem;
+  max-width: 640px;
+  margin-inline: auto;
+}
+
+.page__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.page__head .hint {
+  margin-bottom: 0;
+}
+
+.page .banner {
+  margin: 0;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0.1rem 0.65rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.badge--confirmed {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.badge--cancelled {
+  color: var(--muted);
+}
+
+.ticket__topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.9rem;
+}
+
+.ticket__topline .ticket__eyebrow {
+  margin: 0;
+}
+
+.ticket__code {
+  overflow-wrap: anywhere;
+}
+
+.lookup-form {
+  max-width: 420px;
+}
+
+.lookup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.confirm-box {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1.1rem 1.25rem;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: #fff;
+}
+
+.confirm-box p {
+  margin: 0;
+  font-weight: 700;
+}
+
+.confirm-box__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.key-form {
+  display: grid;
+  gap: 0.25rem;
+  max-width: 420px;
+  padding: 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+}
+
+.key-form__hint {
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.agenda-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.agenda-toolbar .field {
+  min-width: 190px;
+  margin-bottom: 0;
+}
+
+.agenda-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  align-items: start;
+  gap: 1.25rem;
+}
+
+.agenda-col {
+  padding: 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+}
+
+.agenda-col__title {
+  margin: 0 0 0.9rem;
+  font-size: 1rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.agenda-col__empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+.agenda-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.agenda-card {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--ink);
+  border-radius: 10px;
+  background: var(--paper);
+}
+
+.agenda-card__time {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.agenda-card__time span {
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.agenda-card__time span::before {
+  content: "– ";
+}
+
+.agenda-card__client {
+  margin: 0.4rem 0 0;
+  font-weight: 700;
+}
+
+.agenda-card__service {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.agenda-card__code {
+  margin: 0.3rem 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
 /* --------------------------------------------------------------- Móvil */
 @media (max-width: 900px) {
   .app-shell {
@@ -605,6 +909,41 @@ h2 {
 
   .step-actions .button {
     flex: 1;
+  }
+
+  .page {
+    padding: 1.5rem 1.25rem 3rem;
+  }
+
+  .agenda-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .topbar__inner {
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    padding: 0.6rem 1rem 0;
+  }
+
+  .topbar .brand__tagline {
+    display: none;
+  }
+
+  .nav {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .nav__link {
+    flex: 1;
+    justify-content: center;
+    padding-inline: 0.5rem;
+  }
+
+  .page__inner {
+    gap: 1rem;
   }
 }
 

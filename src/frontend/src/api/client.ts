@@ -1,10 +1,12 @@
 import type {
+  Agenda,
   ApiErrorBody,
   ApiErrorDetails,
   Availability,
   Barber,
   Booking,
   BookingRequest,
+  CancelledBooking,
   Service,
 } from "./types";
 
@@ -84,5 +86,37 @@ export function createBooking(payload: BookingRequest): Promise<Booking> {
   return request<Booking>("/bookings", {
     method: "POST",
     body: JSON.stringify(payload),
+  });
+}
+
+/** RF-10 / BR-10: código + teléfono; el backend normaliza el código. */
+export function getBooking(code: string, phone: string): Promise<Booking> {
+  const query = new URLSearchParams({ phone });
+  return request<Booking>(
+    `/bookings/${encodeURIComponent(code)}?${query.toString()}`,
+  );
+}
+
+/** RF-11 / BR-06: cancelar con código + teléfono. */
+export function cancelBooking(
+  code: string,
+  phone: string,
+): Promise<CancelledBooking> {
+  return request<CancelledBooking>(
+    `/bookings/${encodeURIComponent(code)}/cancel`,
+    { method: "POST", body: JSON.stringify({ phone }) },
+  );
+}
+
+/** RF-13 / RF-14: la clave de admin viaja solo en la cabecera. */
+export function getAgenda(
+  date: string,
+  adminKey: string,
+  barberId?: number | null,
+): Promise<Agenda> {
+  const query = new URLSearchParams({ date });
+  if (barberId != null) query.set("barber_id", String(barberId));
+  return request<Agenda>(`/admin/agenda?${query.toString()}`, {
+    headers: { "X-Admin-Key": adminKey },
   });
 }

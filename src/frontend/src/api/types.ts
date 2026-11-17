@@ -37,6 +37,30 @@ export type Booking = {
   end_at: string;
 };
 
+/** POST /bookings/{code}/cancel → 200 solo devuelve código y estado. */
+export type CancelledBooking = {
+  code: string;
+  status: string;
+};
+
+export type AgendaBooking = {
+  start: string;
+  end: string;
+  service: string;
+  client: string;
+  code: string;
+};
+
+export type AgendaBarber = {
+  barber: string;
+  bookings: AgendaBooking[];
+};
+
+export type Agenda = {
+  date: string;
+  barbers: AgendaBarber[];
+};
+
 export type ApiErrorDetails = {
   field?: string;
   [key: string]: unknown;
