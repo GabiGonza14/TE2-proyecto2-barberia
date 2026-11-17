@@ -94,6 +94,7 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
   sessionStorage.clear();
+  localStorage.clear();
 });
 
 describe("Agenda del admin", () => {
@@ -128,7 +129,7 @@ describe("Agenda del admin", () => {
     expect(screen.queryByText("Ana Pérez")).toBeNull();
   });
 
-  it("la clave no sale de import.meta.env y 'Salir' la borra", async () => {
+  it("la clave no sale de import.meta.env, no se persiste y 'Salir' la borra", async () => {
     expect(agendaSource).not.toMatch(/VITE_ADMIN_KEY/);
     expect(agendaSource).not.toMatch(/import\.meta\.env/);
     expect(clientSource).not.toMatch(/VITE_ADMIN_KEY/);
@@ -139,14 +140,17 @@ describe("Agenda del admin", () => {
     enterKey("clave-demo");
     await screen.findByText("Ana Pérez");
 
-    expect(sessionStorage.getItem("barberbook.adminKey")).toBe("clave-demo");
+    // Ni sessionStorage ni localStorage: solo estado de React.
+    expect(sessionStorage.length).toBe(0);
+    expect(localStorage.length).toBe(0);
 
     fireEvent.click(screen.getByRole("button", { name: "Salir" }));
 
     await waitFor(() =>
       expect(screen.getByLabelText("Clave de administrador")).toBeTruthy()
     );
-    expect(sessionStorage.getItem("barberbook.adminKey")).toBeNull();
+    expect(sessionStorage.length).toBe(0);
+    expect(localStorage.length).toBe(0);
     expect(screen.queryByRole("button", { name: "Salir" })).toBeNull();
   });
 });

@@ -1,6 +1,5 @@
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 
-import { clearAdminKey, readAdminKey, saveAdminKey } from "../api/adminKey";
 import { ApiError, getAgenda, getBarbers } from "../api/client";
 import { panamaToday } from "../api/dates";
 import type { Agenda, Barber } from "../api/types";
@@ -12,7 +11,8 @@ function messageFor(error: unknown): string {
 
 export default function AgendaPage() {
   const today = useMemo(() => panamaToday(), []);
-  const [key, setKey] = useState(() => readAdminKey());
+  // La clave vive solo en memoria: nunca en `VITE_*`, localStorage ni el bundle.
+  const [key, setKey] = useState("");
   const [keyDraft, setKeyDraft] = useState("");
   const [date, setDate] = useState(today);
   const [barberId, setBarberId] = useState("all");
@@ -50,7 +50,6 @@ export default function AgendaPage() {
         if (cancelled) return;
         setAgenda(null);
         if (caught instanceof ApiError && caught.code === "UNAUTHORIZED") {
-          clearAdminKey();
           setKey("");
           setError("Clave de administrador inválida");
         } else {
@@ -74,13 +73,11 @@ export default function AgendaPage() {
       return;
     }
     setError(null);
-    saveAdminKey(trimmed);
     setKey(trimmed);
     setKeyDraft("");
   }
 
   function signOut() {
-    clearAdminKey();
     setKey("");
     setAgenda(null);
     setError(null);
@@ -130,7 +127,7 @@ export default function AgendaPage() {
               Entrar
             </button>
             <p className="key-form__hint">
-              La clave se guarda solo en esta pestaña y se borra con «Salir».
+              La clave se guarda solo en memoria y se borra con «Salir».
             </p>
           </form>
         ) : (
