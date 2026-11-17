@@ -27,8 +27,12 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
       # Docker en Windows/macOS no propaga eventos de archivos: --reload por sondeo.
       WATCHFILES_FORCE_POLLING: "true"
+    # Aplica las migraciones Alembic pendientes (idempotente) y luego arranca la API.
     # Hot reload: el código se monta desde el repo, no hace falta --build.
-    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "src/backend"]
+    command:
+      - sh
+      - -c
+      - cd src/backend && alembic upgrade head && cd /app && exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir src/backend
     volumes:
       - ./src/backend:/app/src/backend
       - ./tests:/app/tests
