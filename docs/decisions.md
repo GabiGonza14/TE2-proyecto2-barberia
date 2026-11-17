@@ -25,3 +25,15 @@
 | 5. Código | T13 (**#22**, rama `feat/T13-limpieza-entre-citas`): `domain/rules.py` (`CLEANUP_BUFFER`, `blocked_until`), `services/availability.py`, `services/booking.py`, `repositories/bookings.py`, `models/booking.py` (columna, CHECK y listener `before_insert`) y migración `0002_t13_cleanup` (columna → backfill → NOT NULL + CHECK → `no_double_booking` sobre `tstzrange(start_at, blocked_until, '[)')`). Commits 🔴 `808d78e` → 🟢 `5ff6402` |
 | 6. Pruebas | Tests primero (rojo): AC-04 `test_buffer_after_booking`, AC-11 `test_availability_excludes_taken`, AC-23 `test_buffer_before_existing_booking`, AC-24 `test_db_enforces_buffer`, AC-25 `test_buffer_may_end_after_closing`; ajustes `test_db_rejects_adjacent_bookings` y fixtures de concurrencia (inicios cada 45 min). En verde: 82 unitarios en local, integración contra PostgreSQL en CI |
 | 7. Resultados | PR **#25**; CI en verde (`backend-tests`, `frontend`, `sonarcloud`, `SonarCloud Code Analysis`); AC-04/11/23/24/25 en ✅ en `testing.md`; `api.md` sin cambios (mismo JSON y `end_at` real) |
+
+## Revisión Converge (T12 · cierre)
+Se recorrieron las specs contra el código y la evidencia. Diferencias encontradas:
+
+| # | Spec | Hallazgo | Acción |
+|---|------|----------|--------|
+| C1 | RNF-04 (disponibilidad < 300 ms con ≈ 500 reservas) | No tenía evidencia | **Medido** en T12: p95 = 5 ms con 520 reservas → ✅ (`docs/testing.md`, RNF) |
+| C2 | RNF-06 (sin teléfonos en logs) | El *access log* de uvicorn imprime `GET /bookings/{code}?phone=…` con el teléfono completo | **Código corregido** en PR #32: `PhoneMaskingFilter` en `uvicorn.access` deja `phone=***4567` (TDD, 9 tests) ✅ |
+| C3 | architecture.md (levantar con `docker compose up`) | `docker compose up` no aplica las migraciones: sin `alembic upgrade head` la API arranca sin tablas | **Corregido en PR #33:** el contenedor `api` ejecuta `alembic upgrade head` (idempotente) antes de uvicorn; el README ya no pide el paso manual ✅ |
+| C4 | Pruebas en Docker | `pytest` vacía la tabla `bookings` de la BD a la que apunta; dentro del contenedor esa es la BD de la demo | Documentado en el README: usar `barberbook_test` |
+| C5 | AC-01…AC-25 | Los 25 tests de la matriz existen y pasan en CI | Sin diferencias ✅ |
+
