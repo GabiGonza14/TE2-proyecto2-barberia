@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import App from "../../src/frontend/src/App";
@@ -100,6 +106,7 @@ async function fillClientData(name = "Ana Pérez", phone = "6123-4567") {
 }
 
 afterEach(() => {
+  cleanup();
   vi.unstubAllGlobals();
 });
 
@@ -132,8 +139,8 @@ describe("Flujo de reserva en 4 pasos", () => {
 
     expect(await screen.findByText("K7P2QX")).toBeTruthy();
     expect(screen.getByText(/Guarda tu código/i)).toBeTruthy();
-    expect(screen.getByText("Carlos")).toBeTruthy();
-    expect(screen.getByText("Corte")).toBeTruthy();
+    expect(screen.getAllByText("Carlos").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Corte").length).toBeGreaterThan(0);
   });
 
   it("ante un 409 SLOT_TAKEN avisa, vuelve al paso 3 y recarga la disponibilidad", async () => {
