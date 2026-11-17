@@ -90,9 +90,6 @@ function json(res, status, body) {
     "Content-Type": "application/json; charset=utf-8",
     "Content-Length": Buffer.byteLength(payload),
     "Cache-Control": "no-store",
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
   });
   res.end(payload);
 }
@@ -143,11 +140,7 @@ const server = createServer(async (req, res) => {
   const { pathname, searchParams } = url;
 
   if (req.method === "OPTIONS") {
-    res.writeHead(204, {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Headers": "Content-Type",
-      "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-    });
+    res.writeHead(204);
     res.end();
     return;
   }
