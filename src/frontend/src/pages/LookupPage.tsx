@@ -169,10 +169,12 @@ export default function LookupPage() {
                   </dd>
                 </div>
               </dl>
-              <p className="ticket__note">
-                Guarda tu código: con él y tu teléfono puedes consultar o
-                cancelar.
-              </p>
+              {booking.status === "CANCELADA" ? null : (
+                <p className="ticket__note">
+                  Guarda tu código: con él y tu teléfono puedes consultar o
+                  cancelar.
+                </p>
+              )}
             </article>
 
             <div className="lookup-actions">

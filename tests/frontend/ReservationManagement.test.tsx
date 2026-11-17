@@ -154,6 +154,7 @@ describe("Mi reserva", () => {
     expect(
       screen.queryByRole("button", { name: "Cancelar mi cita" })
     ).toBeNull();
+    expect(screen.queryByText(/Guarda tu código/i)).toBeNull();
   });
 
   it("si faltan menos de 2 horas muestra el mensaje del 409", async () => {

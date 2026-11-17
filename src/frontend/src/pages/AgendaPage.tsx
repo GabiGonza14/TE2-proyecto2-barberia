@@ -169,10 +169,9 @@ export default function AgendaPage() {
                 {agenda.barbers.map((entry) => (
                   <section className="agenda-col" key={entry.barber}>
                     <h3 className="agenda-col__title">
-                      {entry.barber} ·{" "}
                       {entry.bookings.length === 0
-                        ? "sin citas"
-                        : `${entry.bookings.length} ${
+                        ? entry.barber
+                        : `${entry.barber} · ${entry.bookings.length} ${
                             entry.bookings.length === 1 ? "cita" : "citas"
                           }`}
                     </h3>

@@ -105,9 +105,10 @@ describe("Agenda del admin", () => {
     enterKey();
 
     expect(await screen.findByText("Ana Pérez")).toBeTruthy();
-    expect(screen.getByText("Carlos")).toBeTruthy();
-    expect(screen.getByText("Luis")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: /^Carlos/ })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Luis" })).toBeTruthy();
     expect(screen.getByText("Sin citas")).toBeTruthy();
+    expect(screen.getAllByText("Sin citas")).toHaveLength(1);
     expect(screen.getByText("10:00")).toBeTruthy();
     expect(calls.agenda).toBe(1);
     expect(calls.headers[0]?.["X-Admin-Key"]).toBe("clave-demo");
